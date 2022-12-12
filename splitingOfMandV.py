@@ -98,29 +98,34 @@ def main(root,rout=None):
     #WM_merging(None,None,rout)
     buildDBofEls(srcW,srcM)
     #WM_mergeFromMultiPagePdf()
-    ExistsElsNonW1M1(rout)
+
+    #ExistsElsNonW1M1(rout)
 
 W,M,E,={},{},{}
 def buildDBofEls(srcW,srcM):
-    srcW=os.path.join(srcW,'');
-    lw=sorted(os.popen(f'cd {srcW} && dir /s /b |wsl grep -v Сопро|wsl grep pdf').read().splitlines())
-#    lw=[r"C:\AAA\_w_nov\СлужбаДоставки9\94-Л\г.Магнитогорск, п.18 Насосная Территория, д.    0, кв.    0   2173.pdf" ]
-    for pkg,fpath in enumerate(lw):
-        W[fpath]=doc=fitz.open(fpath)
-        sz=doc.page_count
-        for p in range(sz):
-            els,iii,Adr,nonValidFIO=prsW(doc.get_page_text(p))
-            E.setdefault(els,{'W':0,'M':0,'pgs':[]})#[0] isWcount pages
-            E[els]['W']+=1
-            E[els]['pgs'].append({'pos':p,'Type':'W',  #pos==NNN-1 #NNN start from 1  where pos from 0
-                'els':els,'fio':iii,'adr':Adr,'doc':doc,'ParaInfo':{'nonValidFio':nonValidFIO},'fpath':fpath,})
-        print(timing.llgg(f'{os.path.dirname(fpath):^50}',f'Water{pkg:05} {sz:^6} '),flush=True)
-    print(timing.llgg(f'total W: ',"WololoW"))
-    #print('only W:',E)#баг на выгрузке lg_Wnov.№AtimingsW_M_of_E
-    # уже тут можно поугарать на предмет !=1 E[els]['W']  и аналитики содержимого страниц              
-
-    srcW=os.path.join(srcM,'');
-    lm=sorted(os.popen(f'cd {srcM} && dir /s /b |wsl grep pdf').read().splitlines())
+#     srcW=os.path.join(srcW,'');
+#     lw=sorted(os.popen(f'dir {srcW} /s /b |wsl grep -v Сопро|wsl grep pdf').read().splitlines())
+# #    lw=[r"C:\AAA\_w_nov\СлужбаДоставки9\94-Л\г.Магнитогорск, п.18 Насосная Территория, д.    0, кв.    0   2173.pdf" ]
+#     for pkg,fpath in enumerate(lw):
+#         W[fpath]=doc=fitz.open(fpath)
+#         sz=doc.page_count
+#         for p in range(sz):
+#             els,iii,Adr,nonValidFIO=prsW(doc.get_page_text(p))
+#             E.setdefault(els,{'W':0,'M':0,'pgs':[]})#[0] isWcount pages
+#             E[els]['W']+=1
+#             E[els]['pgs'].append({'pos':p,'Type':'W',  #pos==NNN-1 #NNN start from 1  where pos from 0
+#                 'els':els,'fio':iii,'adr':Adr,'doc':doc,'ParaInfo':{'nonValidFio':nonValidFIO},'fpath':fpath,})
+#         print(timing.llgg(f'{os.path.dirname(fpath):^50}',f'Water{pkg:05} {sz:^6} '),flush=True)
+#     print(timing.llgg(f'total W: ',"WololoW"))
+#     #print('only W:',E)#баг на выгрузке lg_Wnov.№AtimingsW_M_of_E
+#     # уже тут можно поугарать на предмет !=1 E[els]['W']  и аналитики содержимого страниц              
+#     return # timing of mek from c:
+#recache 5m09s  then 3m19s
+    print(srcM,flush=True)
+    srcM=os.path.join(r"V:\_mek_nov" )#or srcM,'');# test ram disk
+    print(srcM,flush=True)
+    #return 
+    lm=sorted(os.popen(f'dir {srcM} /s /b |wsl grep pdf').read().splitlines())
     for pkg,fpath in enumerate(lm):
         M[fpath]=doc=fitz.open(fpath)
         for p in range(doc.page_count):
@@ -129,8 +134,8 @@ def buildDBofEls(srcW,srcM):
             E[els]['M']+=1
             E[els]['pgs'].append({'pos':p,'Type':'M',  #pos==NNN-1 #NNN start from 1  where pos from 0
                 'els':els,'fio':iii,'adr':Adr,'doc':doc,'ParaInfo':{'nonValidFio':nonValidFIO},'fpath':fpath})
-        print(timing.llgg(f'Electricity{pkg:05}M ',fpath))
-    print(timing.llgg(f'total M: ',"MololoM"))
+        print(timing.llgg(f'Electricity{pkg:05}M ',fpath),flush=True)
+    print(timing.llgg(f'total M: ',"MololoM"),flush=True)
     #print(E)
 
 def ExistsElsNonW1M1(outfld):
