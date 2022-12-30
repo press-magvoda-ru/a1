@@ -27,11 +27,20 @@ def add2Hn(paths):
         rname[Hn(e)] = e
 
 
+def clearAdr(a):
+    b = a.replace(',кв.0', '__').replace(',кв.', '__').replace(',д.', '_').replace('.',' ').replace(',',' ')\
+        .strip().split(' ',1)[-1].split('ул.',1)[-1].strip()#.replace(' ','')
+    return b
+
+
 def prsM(page, file, pN):
     if file not in rname:
         file = Hn(file)
     adr = page.split('\n', 1)[0].strip().replace('/', '%').replace(
         ', ', ',').replace('. ', '.').replace(' %', '%').replace('г Магнитогорск', '')
+    # Вычищение adr
+    adr = clearAdr(adr)
+
     if adr[0] == '4' and adr[6] == ',':
         adr = adr[7:]
     if not (l := page.split('Лицевой счет:', 1)[1]):
@@ -62,8 +71,11 @@ def prsW(page, src, pageNum):
     page = page.replace('\xa0', ' ')
     els = '' if len(t := page.split('ЕЛС:', 1)) < 2 else t[1].split(
         '\n', 1)[0].replace(' ', '')
-    adr = (l := t[0].split('\n', 4))[1].replace('г.Магнитогорск',
-                                                '').replace('/', '%').replace('"', "'").translate(b_c)
+    adr = (l := t[0].split('\n', 4))[1].replace('г.Магнитогорск', '').replace(
+        '/', '%').replace('"', "'").translate(b_c).replace('корп.', '%')
+    # Вычищение adr
+    adr = clearAdr(adr)
+
     uuu = l[2].split(':', 1)[-1].translate(b_c)
     pa = '' if len(u := page.split('ЛИЦЕВОЙ СЧЕТ:', 1)
                    ) < 2 else u[1].split('\n', 1)[0].replace(' ', '')

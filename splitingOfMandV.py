@@ -1,22 +1,26 @@
-inN,=5,
-from collections import defaultdict
-from itertools import chain
-from functools import lru_cache
-from datetime import datetime
-import multiprocessing as mp
-import sys
-import os
-import fitz
-# import os.path
-import rezname
-import pprint
-import timing
-from os.path import dirname, join, basename
-from reparseWxMx import prsM, prsW, Pg, Hn, rname, name2str,add2Hn
+from reparseWxMx import prsM, prsW, Pg, Hn, rname, name2str, add2Hn
 from collections import namedtuple
+from os.path import dirname, join, basename
+import timing
+import pprint
+import rezname
+import fitz
+import os
+import sys
+import multiprocessing as mp
+from datetime import datetime
+from functools import lru_cache
+from itertools import chain
+from collections import defaultdict
+inN, = 9,
+de_ug = None
+#de_ug = 1
+
 Nparts = namedtuple('Nparts', 's c i')
-# 33 lol with }; 17 llaaag on W; 4 M is 1m30s;
-( mainpid,) = ( os.getpid(),)
+Wshort = namedtuple('Wshort', 'weight Hn wm w')
+Mfrom, Wfrom = {}, {}
+
+(mainpid,) = (os.getpid(),)
 def dirend(pathofdir): return join(pathofdir, '')
 def LinesOfFileName(pathofFile): return open(pathofFile).read().splitlines()
 
@@ -36,21 +40,10 @@ def weightWT(a): return fitz.open(a).page_count
 
 # ... из предположения что удвоение учетверяет ( хотя по факту утраивает)
 # словарь/список (пока нет) с аппроксимацией - число_страниц_файла->время_на_файл :
-Mpages2time = {
-    1: 0.0030,   2: 0.0090,   3: 0.0145,   4: 0.0268,   6: 0.0260,   9: 0.0390,  12: 0.0530,  17: 0.0820,  20: 0.0890,  30: 0.1380, 31: 0.1380,  36: 0.1680,  38: 0.1873,  45: 0.2550,  50: 0.2383,  51: 0.2350,
-    66: 0.3020,  74: 0.3540,  88: 0.4650, 89: 0.4650,  90: 0.4646,  92: 0.4498,  94: 0.5963,  98: 0.5549,  99: 0.5764, 102: 0.5666, 115: 0.7066, 118: 0.5694, 128: 0.7462, 130: 0.6954, 132: 0.8287, 135: 0.6524,
-    139: 0.8339, 144: 0.6899, 156: 0.7190, 161: 0.8312, 162: 0.8536, 174: 0.8060, 175: 0.8020, 191: 1.0527, 196: 1.1310, 199: 1.1215, 206: 1.0995, 219: 1.4275, 225: 5.8552, 238: 4.3170, 263: 7.0041,
-    292: 1.5012, 295: 1.7988, 296: 1.6624, 327: 1.6466, 335: 1.7411, 342: 1.7676, 387: 2.5890, 404: 2.1864, 407: 2.9501, 409: 2.1208, 427: 2.5174, 435: 2.6380, 445: 2.2108, 447: 2.8338, 453: 2.5068,
-    455: 4.0784, 460: 2.7527, 494: 3.5601, 514: 3.5387, 518: 2.5778, 520: 3.8566, 539: 3.5938, 543: 3.7930, 547: 2.7861, 555: 3.5197, 556: 2.6985, 569: 3.4309, 570: 3.3965, 580: 3.0530, 614: 3.5789,
-    657: 4.2440, 660: 4.1803, 663: 4.1165, 665: 3.8395, 669: 4.2581, 683: 3.7920, 694: 4.4470, 720: 4.2234, 728: 4.1546, 737: 3.7626, 742: 6.2911, 746: 5.0300, 755: 9.1913, 766: 5.9401, 775: 6.6480,
-    779: 4.2097, 810: 4.7389, 824: 5.2514, 830: 4.7476, 847: 9.1537, 854: 5.0737, 855: 10.3093, 869: 5.2589, 870: 5.2685, 876: 10.3269, 879: 10.3270, 894: 6.7237, 902: 7.6602, 908: 4.7613, 920: 5.6136,
-    941: 5.5570, 958: 5.8541, 962: 5.9240, 967: 5.7880, 968: 5.7454, 976: 10.2881, 977: 5.4905, 979: 5.4905, 996: 11.2110, 1002: 5.6536, 1004: 5.9174, 1007: 6.3281, 1008: 6.4650, 1013: 5.8380, 1015: 5.8380, 1019: 7.2117, 1064: 6.1261,
-    1096: 5.8918, 1114: 5.7600, 1121: 6.2705, 1128: 5.7456, 1150: 6.8091, 1202: 6.7658, 1204: 6.7772, 1224: 7.4149, 1241: 5.9250, 1263: 11.8820, 1268: 7.5943, 1281: 11.5301, 1309: 9.0319, 1322: 7.8720, 1323: 12.9740,
-    1356: 9.9600, 1371: 12.7787, 1372: 8.5281, 1378: 12.7394, 1413: 9.7538, 1414: 12.9606, 1417: 13.5051, 1425: 8.1877, 1427: 14.8995, 1486: 11.3548, 1553: 9.3582, 1562: 12.8201, 1573: 9.5624, 1576: 9.6913, 1589: 9.6400,
-    1639: 10.0099, 1707: 10.5130, 1764: 11.2161, 1832: 15.9827, 1872: 16.1610, 1880: 14.0519, 1898: 16.6987, 1914: 12.7837, 1933: 15.0000, 1993: 15.9360, 2000: 16.0000,
-    2001: 16.0000,
-}
-Wpages2time = {k: k for k in range(12000)}
+Mpages2time = {n: (0.004+0.005/2000*n)*n for n in range(9999)}
+# {k: k for k in range(12000)}
+# (0.004+0.006/2000*n)*n for n in range(9999)}
+Wpages2time = {n: n for n in range(9999)}
 def SumMap(wf, l): return sum(map(wf, l))
 
 
@@ -61,7 +54,6 @@ def toNparts(lfs, n, p2t, wf):
         (v := min(rez)).s[0] += p2t[wf(e)]
         v.c.append(e)
     return rez
-    # def PartWeight(lfs, p2t, wf): return sum(p2t[wf(f)] for f in lfs)
 
 
 def inSubProcM(Tp, base, prt):
@@ -69,12 +61,6 @@ def inSubProcM(Tp, base, prt):
     print(f'>>{Tp} from {prt.i} {os.getpid()} {os.getcwd()}')
     pagestxt = open(f'M{prt.i:>03}', 'w')  # {pid:>6}
     if (prt.i == 1):  # само пикленье Рика
-        # + pprint.print(rname,stream=pagestxt)+'\n,' BUT:
-        # nfild = f'{rname=}'.split('=', 1)[0]
-        # A = '{'
-        # B = '},'
-        # head = '\n'.join([f'{A}\n{nfild:>6}:{A}', '\n'.join(
-        #     f'{k:20}:{v},\n'for k, v in rname.items()), f'{B:>8}\n'])
         pagestxt.write('{')
     print(f'{prt.i=:^3} weght:{prt.s[0]:^17.3f} {pid=:^7}len={len(prt.c):>4} ',
           f' '.join(f'{weightMek(f)}'for f in prt.c), end=' END\n')
@@ -108,6 +94,7 @@ def M_data_spliting(src, of):
     print(timing.log('totalM_data_spliting', of))
     print(f">{Tp}   end: {datetime.now()}")
     os.system('copy /b m??? mTotB')
+    os.system('del m???')
     print(timing.log('mTotB', of))
     sys.stdout = stdout
     return of
@@ -151,7 +138,10 @@ def W_data_spliting(src, of):
     print(timing.log('totalW_data_spliting', of))
     print(f">{Tp}   end:{datetime.now()}")
     os.system('copy /b w??? wTotB')
+    os.system('del w???')
+
     print(timing.log('wTotB', of))
+
     sys.stdout = stdout
     os.chdir(dirname(src))
     return of
@@ -159,11 +149,9 @@ def W_data_spliting(src, of):
 
 def main(root, rout=None):
     rout = rout or root
-    srcM = f'{root}"_mek_nov"'
-    srcW = f'{root}{"_w_nov"}'
-    
-    # srcM = f'{root}{"_mek_nov_shrt"}'
-    # srcW = f'{root}{"_w_nov_shrt"}'  # тЭсто сливание сразу из pdf
+    # тЭсто сливание сразу из pdf
+    srcM, srcW, = (f'{root}{"_mek_nov_shrt"}',
+                   f'{root}{"_w_nov_shrt"}') if de_ug else (f'{root}"_mek_nov"', f'{root}{"_w_nov"}',)
     print(root, rout, srcM, srcW, sep="\t")
     # MW for 1st 2nd then all
     os.mkdir(fld := f'{rout}\\MW{rezname.rezname()}\\')
@@ -171,39 +159,27 @@ def main(root, rout=None):
 
     M_data_spliting(srcM, fld)
     W_data_spliting(srcW, fld)
-    pprint.pprint(rname, stream=open(join(fld,name2str(f'{rname=}')),'w'),width=333) # nero are 
+    pprint.pprint(rname, stream=open(
+        join(fld, name2str(f'{rname=}')), 'w'), width=333)  # nero are
     WM_mergeFromMultiPagePdf(fld, fld, fld)
 
-#различные DS(ах если бы - чисто воборьи и пушки) для быстро-быстрого паренья: 
+
+# различные DS(ах если бы - чисто воборьи и пушки) для быстро-быстрого паренья:
 W, M, bdB = None, None, defaultdict(list)
 bdByAdr = defaultdict(list)
 Wpa, Mpa = defaultdict(list), defaultdict(list)
 emptyEls = []
-#outFileName = 'bdB.defaultdict.txt'
+# outFileName = 'bdB.defaultdict.txt'
 Wfa, Mfa = defaultdict(list), defaultdict(list)
 
 # WfaMfa - таблица пересечений - список общих(парных) в возрастающем по Wfa номерам - пора бы и pandas подсобить сюдыть
-WbyM={} #{ HnW:{HnM:{номерв(HnM):номерв(HnW)}}} ...
-
-def buildWowDataStructureTM(WW, MM):
-    # out = open(outFileName, 'a')
-    # out.write('\n---------------\n')
-
-    paByT = {'M': Mpa, 'W': Wpa}
-    faByT = {'M': Mfa, 'W': Wfa}
-    for k, v in chain(WW.items(), MM.items()):
-        bdByAdr[v.adr].append(v)
-        paByT[v.Hn[0]][v.pa].append(v)
-        faByT[v.Hn[0]][v.pa].append(v)
-        if v.els:
-            bdB[v.els].append(v)
-        else:
-            emptyEls.append(v)  # какой нить
-    print(timing.log('3', "Построение словаря елс'ок"))
+WbyM = {}  # { HnW:{HnM:{номерв(HnM):номерв(HnW)}}} ...
+MbyW = {}
 
 
 def WM_mergeFromMultiPagePdf(srcW, srcM, outfld):
-    global W, M,rname
+    global W, M  # , rname
+
     def getPgs(path):
         f = open(path)
         txt = f.read()
@@ -211,22 +187,261 @@ def WM_mergeFromMultiPagePdf(srcW, srcM, outfld):
         return rez
 
     buildWowDataStructureTM(W := getPgs(join(srcW, 'wTotB')),
-                            M := getPgs(join(srcM, 'mTotB')))
-
-    rname= getPgs(join(outfld,name2str(f'{rname=}'))) # test in wrk rname or get...
-    
-    
-    # WbyM  # {Hn(w)}-спектр страниц по  "мэк пространству"
-
-    # цикл по Wfa  строим карты('чертежи') по которым собираем из основы втыкая из мэк группы
-
-    # цикл по W ключ в рез по src  - проще переоткрыть(но медленее)
-    # по критерию ELS|+ из набираем rez[src]=[pars.push(),unik.push,possible?]
-
+                            M := getPgs(join(srcM, 'mTotB')), outfld)
+    # rname = getPgs(join(outfld, name2str(f'{rname=}')))
     None
 
 
-"""
+pdfnum = 0
+
+
+def savepdf2(doc, name):
+    global pdfnum
+    doc.save(name, garbage=2, deflate=True)
+    pdfnum = pdfnum+1
+    print(timing.log(f'№{pdfnum:>03}', name))
+
+
+def savepdfW(doc, name, fld, sz, sbj=2):
+    #sz=sz or WbyM[name]["c"]
+    if (p := doc.page_count):
+        p //= sbj
+        savepdf2(
+            doc, join(fld, z := f'{name[2:]:<15}({sz:05}){sbj:^3}{p:05}.pdf'))
+
+
+def savepdfM(doc, name, fld, sbj=''):
+    if (p := doc.page_count):
+        savepdf2(doc, join(fld, z := f'{name:0}{sbj:^3}{p:05}.pdf'))
+
+
+def fromTo(src, p, dst):
+    dst.insert_pdf(src, from_page=p, to_page=p, links=0, annots=0, final=False)
+
+
+def inSubmergeW(prt, unk, rname):
+    pid = os.getpid()
+    print(f'>>WW from {prt.i} {os.getpid()} {os.getcwd()}')
+    Mfrom = {}
+
+    # pagestxt = open(f'W{prt.i:>03}', 'w')  # {pid:>6}
+    print(f'{prt.i=:^3} weght:{prt.s[0]:^17.3f} {pid=:^7}len={len(prt.c):>4} ',
+          f' '.join(f'{f.weight}'for f in prt.c), end=' ENDWW\n')
+
+    for e in prt.c:  # e is namedtuple('Wshort', 'weight Hn wm w')
+        sz = (inp := fitz.open(rname[e.Hn])).page_count
+        out, out1 = fitz.open(), fitz.open()
+        for x, y in e.wm:
+            fromTo(inp, x.pN, out)
+            if y.Hn not in Mfrom:
+                Mfrom[y.Hn] = fitz.open(rname[y.Hn])
+            fromTo(Mfrom[y.Hn], y.pN, out)
+        savepdfW(out, e.Hn, unk, sz)
+        for x in e.w:
+            fromTo(inp, x.pN, out1)
+        savepdfW(out1, e.Hn, unk, sz, 1)
+    print(timing.log(f'{" ":<7}{pid:>5}', f'{pid:05}'), flush=True)
+
+
+def inSubMekOnes(unk, kMv, i):
+    t = 0
+    for k,(v,l) in kMv.items():
+        if t % inN == i:
+            z = fitz.open(v)
+            z.select(l)  # lol set is not seq for pymupdf
+            print(f'MekOnes prt:{i},counter {t}')
+            savepdfM(z, f"{i:02}_{basename(v).split('.')[0]}", unk, 1)
+        t += 1
+
+
+def buildWowDataStructureTM(WW, MM, ofld):
+    os.chdir(ofld)  # на усях слу
+    print(timing.log('3.-2', "buildWowDataStructureTM:"))
+    AllByAdrs = []
+    for k, v in chain(WW.items(), MM.items()):
+        AllByAdrs.append(v)  # или тут
+    # собственно здесь нужное отображение втулить из W|M строк адресса в "норм"
+
+    def simpleAdr(v):
+        return v.adr.replace('корп.', '%').replace(',кв.', ' ').replace(',д.', ' ')\
+            .replace(',д.', ' ').replace('.', ' ').split(' ', 1)[-1].replace(',', ' ').strip()
+
+    AllByAdrs.sort(key=simpleAdr)
+    print(timing.log('3.-1builded', ":AllByAdrs:"))
+    print('AllByAdrs:')
+    pprint.pprint(AllByAdrs, stream=(ou := open('AllByAdrs.dict', 'w')))
+    ou.close()
+    print(timing.log('3.-1', ":AllByAdrs"))
+
+    # привет 202№!
+
+    for k, v in WW.items():
+        if v.els not in bdB:
+            bdB[v.els] = {'c': 0, 'w': 0, 'm': 0, 'wm': 0, 'l': []}
+        cur = bdB[v.els]
+        cur['c'] += 1
+        cur['w'] += 1
+        cur['l'].append([cur['c'], 1, v])
+    for k, v in MM.items():
+        if v.els not in bdB:
+            bdB[v.els] = {'c': 0, 'w': 0, 'm': 0, 'wm': 0, 'l': []}
+        cur = bdB[v.els]
+        cur['c'] += 1
+        if (not v.els):
+            cur['m'] += 1
+            cur['l'].append([cur['c'], 2, v])
+            continue
+        for e in cur['l']:
+            if e[1] == 1 and e[2].u == v.u:  # логика парности, можно так же  игнорируя u  сличать sq
+                #  и вообще глобально игнорируя els сопоставлять по приведённым adr
+                #  чудеса сии - ща сборка по парам - добавить сборку в W-файлам для дальнейшего жнивья в 2-3 паралели(2.5 гига на)
+                cur['w'] -= 1
+                cur['wm'] += 1
+                e[1] = 3
+                e.append(v)
+                break
+        else:
+            cur['m'] += 1
+            cur['l'].append([cur['c'], 2, v])
+    # сборка парных в  wm=X w=1 m=1 # таковых вроде всего 293 по ноябрю можно и счётчик тут для
+    for k, v in bdB.items():
+        if (cur := v)['w'] == 1 and cur['m'] == 1:
+            for e in cur['l']:
+                if e[1] == 1:
+                    e[1] = 3
+                    # очевидно непарный M в конце. при пакетном все W затем все M
+                    e.append(cur['l'].pop()[-1])
+                    cur['w'] -= 1
+                    cur['m'] -= 1
+                    cur['wm']+1
+                    break
+
+    # here on bdB сопоставление по адресам (по первости только среди безelsных)
+    # ---
+
+    print(timing.log('3', "Построение словаря елс'ок с парнованием ежель чё"))
+    # сборка адрессного стола чиста ради прикидки чё как
+
+    for k, v in rname.items():
+        if k[0] == 'M':
+            Mfrom[k] = fitz.open(v)
+            MbyW[k] = {'p': set(range(Mfrom[k].page_count)),
+                       'S': defaultdict(int), }
+        if k[0] == 'W':
+            Wfrom[k] = fitz.open(v)
+
+    out, out1 = fitz.open(), fitz.open()
+    tf = 'imposible'
+    os.mkdir(unk := join(ofld, "WMpdfs"))
+
+    # перегрупировка пар из bdB в Wlst[]
+    Wlst = []
+    usedWnames = set()
+
+    for k, v in WW.items():
+        if (vHn := v.Hn) not in usedWnames:
+            usedWnames.add(vHn)
+            Wlst.append(Wshort([0], vHn, [], []))
+            z = WbyM[vHn] = {'c': 0, 'b': 0, 'S': defaultdict(int), }
+        ou = Wlst[-1]
+        (cur := bdB[v.els])
+        if cur['wm'] and cur['l'][0][1] == 3:
+            cur['wm'] -= 1
+            x, y = cur['l'].pop(0)[-2:]
+            # тут доп  можно передавать причину матчинга из ~~ [0]
+            ou.wm.append([x, y])
+            z['S'][(yHn := y.Hn)] += 1
+            MbyW[yHn]['S'][x.Hn] += 1
+            MbyW[yHn]['p'].remove(y.pN)
+        else:
+            x = (tt := cur['l'].pop(0))[-1]
+            ou.w.append(x)
+            z['b'] += 1
+            cur['l'].append(tt)  # kekeke for [num,1,w]
+        z['c'] += 1
+
+    for e in Wlst:
+        e.weight[0] = 2*len(e.wm)+len(e.w)  # чисто просто ага
+    # не факт?!(см .s :)) что поля в порядке имен типа :0
+    Wlst.sort(key=lambda e: e.weight[0], reverse=True)
+    procs, chunks = [], [Nparts([0], [], i+1)
+                         for i in range(inN)]  # ибо память ram?
+    for e in Wlst:  # e is namedtuple('Wshort', 'weight Hn wm w')
+        (v := min(chunks)).s[0] += e.weight[0]
+        v.c.append(e)
+    for chunk in chunks:
+        proc = mp.Process(target=inSubmergeW, args=(chunk, unk, rname))
+        procs.append(proc)
+        proc.start()
+    for proc in procs:
+        proc.join()
+    print(timing.log('totalW_data_merging', "ПарамПамПам"))
+    print(f">WWW   end:{datetime.now()}")
+
+    os.mkdir(unk := join(ofld, 'MekOnes'))
+    procs, = [],
+    rnr = {k: (v, list(MbyW[k]['p']))
+           for k, v in rname.items() if k[0] == 'M' and MbyW[k]['p']}
+    for i in range(inN):
+        proc = mp.Process(target=inSubMekOnes, args=(unk, rnr, i))
+        procs.append(proc)
+        proc.start()
+    for proc in procs:
+        proc.join()
+
+    pprint.pprint(
+        {k: {'p': (len(v['p']), v['p']), 'S': dict(v['S'])}for k, v in MbyW.items()}, width=99999999,
+        stream=open(join(ofld, 'MbyW'), 'w'))
+    print(timing.log('4_1', ":MbyW"))
+
+    pprint.pprint(WbyM, width=99999999, stream=open(join(ofld, 'WbyM'), 'w'))
+    print(timing.log('4_2', ":WbyM"))
+
+   
+   
+   
+   
+    print('bdB:')
+    pprint.pprint({k: (len(v['l']), v)
+                  for k, v in bdB.items() if len(v['l']) > 1}, stream=open(join(ofld, 'bdB'), 'w'))
+    print(timing.log('4_3', ":bdB"))
+
+    adrlist=[]
+    for k,v in bdB.items():
+        for e in v['l']:
+            adrlist.append(e[-1])
+   
+    adrlist.sort(key=lambda a:a.adr)
+    pprint.pprint(adrlist, stream=open(join(ofld, 'adrlist'), 'w'))
+
+
+
+
+
+    # saving rest from BdB (m then w cose kekeke :
+    if False:# пока без bdBEls
+        os.mkdir(unk := join(ofld, 'bdBEls'))
+        Tfrom = {'M': Mfrom, 'W': Wfrom}
+        for k, v in bdB.items():
+            b = fitz.open()
+            if len(lst := v['l']) < 2:
+                continue
+            c = {'W': 0, 'M': 0}
+            for ll in lst:
+                e = ll[-1]
+                c[(t := e.Hn[0])] += 1
+                fromTo(Tfrom[t][e.Hn], e.pN, b)
+            unk2 = join(unk, f'w{c["W"]:02}m{c["M"]:02}')
+            if not os.path.exists(unk2):
+                os.mkdir(unk2)
+            savepdf2(b, join(
+                unk2, f'w{c["W"]:02}m{c["M"]:02}_{b.page_count:>04}_{k.rjust(10,"_")}.pdf'))
+
+    print(timing.log('4_E', "Отсохронялись"))
+
+    # остатки(незамаскированные мековские)
+
+
 def WM_mergingFromOnePages(srcW, srcM, outfld):
     out2, count2, out1, count1, T, i = fitz.open(), 0, fitz.open(), 0, '2', 0
     srcW = srcW or f'{outfld}\\{"Wrez_2022-12-01 17-31-08"}'
@@ -250,7 +465,6 @@ def WM_mergingFromOnePages(srcW, srcM, outfld):
             os.remove(f)
         except OSError as e:
             print(f'{f}!{e=}')
-    buildBaseOf()
     t, nm = {'NNN': ''}, ''
     for pg in sorted(os.listdir(srcW)):
         Wp = f'{srcW}\\{pg}'
@@ -280,6 +494,8 @@ def WM_mergingFromOnePages(srcW, srcM, outfld):
     res('M')
     print(srcW, srcM, outfld, 'Step \u03c0', "   π пиу пиу")
 
+
+"""
 W, M, E, = {}, {}, {}
 def buildDBofEls(srcW, srcM):
     #     srcW=os.path.join(srcW,'');
@@ -365,13 +581,12 @@ def buildBaseOf(srcW, srcM):
         bd[(info := getinfo(pg))['els']].append(info)
 
     print(timing.log(0, "Построение словаря елс'ок"))
-
-
-
 """
+
 
 if __name__ == '__main__':
     root = rezname.getArgOr(1, dirname(dirname(__file__)), 'Dir')
+    print(f':\t Начало', timing.log('', f'{timing.pred-timing.base}'))
     main(join(root, ''))
     timing.ender()
 # 133 # b+2

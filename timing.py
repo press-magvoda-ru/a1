@@ -16,7 +16,6 @@ def log(i, msg, nonValidFIO=None):
     return msg
 
 
-print(f':\t Начало', log('', f'{pred-base}'))
 
 
 def fltru(x): return ''.join(re.findall(r'[ЁА-Яа-яЁ]', x))
