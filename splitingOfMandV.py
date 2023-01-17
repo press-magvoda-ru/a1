@@ -16,54 +16,44 @@ from collections import defaultdict
 
 def mainUI(in_srcM,in_srcW,in_fld):
     from PyQt5 import QtWidgets, uic
-    def baseof(path):
-        return  os.path.dirname(path)
+    def baseof(path): return  os.path.dirname(path)
     frm_cls = uic.loadUiType(f"{baseof(__file__)}\guiForPairing.ui")[0]
     class mn_Window(QtWidgets.QMainWindow, frm_cls):
         def __init__(self, parent=None):
             QtWidgets.QMainWindow.__init__(self, parent)
             self.setupUi(self)
-            self.lb_srcM.text=self.srcM=in_srcM.replace('/','\\')
-            self.lb_srcW.text=self.srcW=in_srcW.replace('/','\\')
-            self.lb_fld.text=self.fld=in_fld.replace('/','\\')
-            self.pButt_srcM.clicked.connect(self.choose_srcM)
-            self.pButt_srcW.clicked.connect(self.choose_srcW)
-            self.pButt_fld.clicked.connect(self.choose_fld)
-            self.pButt_start_and_done.clicked.connect(self.run_run)
+            self.b_srcM.setText(in_srcM) 
+            self.b_srcW.setText(in_srcW) 
+            self.b_fld.setText(in_fld) 
+            self.b_srcM.clicked.connect(self.choose_srcM)
+            self.b_srcW.clicked.connect(self.choose_srcW)
+            self.b_fld.clicked.connect(self.choose_fld)
+            self.b_start_and_done.clicked.connect(self.run_run)
         def choose_srcM(self):
-            #self.lb_srcM.text=
-            self.srcM=str(QtWidgets.QFileDialog.getExistingDirectory(self, "Select Directory")).replace('/','\\') or self.srcM
-            self.pButt_srcM.setText(self.srcM)
+            if (t:=str(QtWidgets.QFileDialog.getExistingDirectory(self, "Select Directory")).replace('/','\\')):
+                self.b_srcM.setText(t)
         def choose_srcW(self):
-            self.srcW = str(QtWidgets.QFileDialog.getExistingDirectory(self, "Select Directory")).replace('/','\\') or self.srcW
-            self.pButt_srcW.setText(self.srcW)
+            if (t:=str(QtWidgets.QFileDialog.getExistingDirectory(self, "Select Directory")).replace('/','\\')):
+                self.b_srcW.setText(t)
         def choose_fld(self):
-            self.fld = str(QtWidgets.QFileDialog.getExistingDirectory(self, "Select Directory")).replace('/','\\') or self.fld
-            self.pButt_fld.setText(self.fld)
+            if (t:=str(QtWidgets.QFileDialog.getExistingDirectory(self, "Select Directory")).replace('/','\\')):
+                self.b_fld.setText(t)
         def run_run(self):
-            if not os.path.isdir(self.fld):
-                os.mkdir(self.fld)
-            os.chdir(self.fld)
-            os.system(f'start "" "{self.fld}"')
-            print(self.srcM,self.srcW,self.fld)
-            M_data_spliting(self.srcM, self.fld)
-            W_data_spliting(self.srcW, self.fld)
+            srcM,srcW,fld=self.b_srcM.text(),self.b_srcW.text(),self.b_fld.text()
+            if not os.path.isdir(fld):
+                os.mkdir(fld)
+            os.chdir(fld)
+            os.system(f'start "" "{fld}"')
+            print(srcM,srcW,fld)
+            M_data_spliting(srcM, fld)
+            W_data_spliting(srcW, fld)
             pprint.pprint(rname, stream=open(
-                join(self.fld, name2str(f'{rname=}')), 'w'), width=333)  # nero are
-            WM_mergeFromMultiPagePdf(self.fld, self.fld, self.fld)
-            exit()
-
-
-
-
-
-
-
+                join(fld, name2str(f'{rname=}')), 'w'), width=333)  # nero are
+            WM_mergeFromMultiPagePdf(fld, fld, fld)
     app = QtWidgets.QApplication(sys.argv)
     myWindow = mn_Window()
     myWindow.show()
     app.exec()
-    # exit()
     return ['','','']
 
 inN, = 9,
@@ -131,7 +121,6 @@ def inSubProcM(Tp, base, prt):
 
 def M_data_spliting(src, of):
     src, Tp, = dirend(src), 'M',
-
     stdout, sys.stdout = sys.stdout, open(
         (of := of+f'\\_{Tp}{rezname.rezname()}')+'.txt', 'w')
     print(f">{Tp} start: {datetime.now()}")
@@ -153,8 +142,6 @@ def M_data_spliting(src, of):
     print(timing.log('mTotB', of))
     sys.stdout = stdout
     return of
-
-
 def inSubProcW(Tp, base, prt):
     i, pid = base, os.getpid()
     print(f'>>{Tp} from {prt.i} {os.getpid()} {os.getcwd()}')
@@ -172,8 +159,6 @@ def inSubProcW(Tp, base, prt):
     if (prt.i == inN):
         pagestxt.write('}')
     print(timing.log(f'{i-base:<7}{pid:>5}', f'{pid:05}'), flush=True)
-
-
 def W_data_spliting(src, of):
     src, Tp,  = dirend(src), 'W',
     stdout, sys.stdout = sys.stdout, open(
@@ -200,20 +185,11 @@ def W_data_spliting(src, of):
     sys.stdout = stdout
     os.chdir(dirname(src))
     return of
-
-
 def main(root, rout=None):
     rout = rout or root
-    # тЭсто сливание сразу из pdf
     srcM, srcW, = (f'{root}{"_mek_nov_shrt"}',
                    f'{root}{"_w_nov_shrt"}') if de_ug else (f'{root}{"_mek_dec"}', f'{root}{"_w_t_dec"}',)
-                   #_mek_dec
-                   #_mek_dec_1ZYX
-    print(root, rout, srcM, srcW, sep="\t")
-    mainUI(srcM,srcW,join(rout,f'MW{rezname.rezname()}'))
-    
-
-
+    mainUI(join(root,'_mek'),join(root,'_w_t'),join(rout,f'MW{rezname.rezname()}'))
 
 # различные DS(ах если бы - чисто воборьи и пушки) для быстро-быстрого паренья:
 W, M, bdB = None, None, defaultdict(list)
@@ -230,21 +206,16 @@ MbyW = {}
 
 def WM_mergeFromMultiPagePdf(srcW, srcM, outfld):
     global W, M  # , rname
-
     def getPgs(path):
         f = open(path)
         txt = f.read()
         rez = eval(txt)  # читаем словарь - куда деваться
         return rez
-
     buildWowDataStructureTM(W := getPgs(join(srcW, 'wTotB')),
                             M := getPgs(join(srcM, 'mTotB')), outfld)
     # rname = getPgs(join(outfld, name2str(f'{rname=}')))
-    None
-
 
 pdfnum = 0
-
 
 def savepdf2(doc, name):
     global pdfnum
@@ -252,14 +223,11 @@ def savepdf2(doc, name):
     pdfnum = pdfnum+1
     print(timing.log(f'№{pdfnum:>03}', name))
 
-
 def savepdfW(doc, name, fld, sz, sbj=2):
-    #sz=sz or WbyM[name]["c"]
     if (p := doc.page_count):
         p //= sbj
         savepdf2(
             doc, join(fld, z := f'{name[2:]:<15}({sz:05}){sbj:^3}{p:05}.pdf'))
-
 
 def savepdfM(doc, name, fld, sbj=''):
     if (p := doc.page_count):
@@ -384,6 +352,7 @@ def buildWowDataStructureTM(WW, MM, ofld):
     out, out1 = fitz.open(), fitz.open()
     tf = 'imposible'
     os.mkdir(unk := join(ofld, "WMpdfs"))
+    os.system(f'start "Квитанции с водой" "{unk}"')
 
     # перегрупировка пар из bdB в Wlst[]
     Wlst = []

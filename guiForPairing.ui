@@ -6,20 +6,20 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>978</width>
-    <height>377</height>
+    <width>863</width>
+    <height>209</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QPushButton" name="pButt_srcM">
+   <widget class="QPushButton" name="b_srcM">
     <property name="geometry">
      <rect>
-      <x>10</x>
+      <x>170</x>
       <y>10</y>
-      <width>181</width>
+      <width>666</width>
       <height>41</height>
      </rect>
     </property>
@@ -27,12 +27,12 @@
      <string>Выбор Ката</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="pButt_srcW">
+   <widget class="QPushButton" name="b_srcW">
     <property name="geometry">
      <rect>
-      <x>10</x>
+      <x>170</x>
       <y>50</y>
-      <width>181</width>
+      <width>666</width>
       <height>41</height>
      </rect>
     </property>
@@ -40,12 +40,12 @@
      <string>Выбор Лога</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="pButt_fld">
+   <widget class="QPushButton" name="b_fld">
     <property name="geometry">
      <rect>
-      <x>10</x>
+      <x>170</x>
       <y>90</y>
-      <width>181</width>
+      <width>666</width>
       <height>40</height>
      </rect>
     </property>
@@ -53,12 +53,12 @@
      <string>Кудыть</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="pButt_start_and_done">
+   <widget class="QPushButton" name="b_start_and_done">
     <property name="geometry">
      <rect>
       <x>10</x>
       <y>140</y>
-      <width>801</width>
+      <width>826</width>
       <height>23</height>
      </rect>
     </property>
@@ -69,9 +69,9 @@
    <widget class="QLabel" name="lb_srcM">
     <property name="geometry">
      <rect>
-      <x>200</x>
+      <x>10</x>
       <y>10</y>
-      <width>481</width>
+      <width>160</width>
       <height>31</height>
      </rect>
     </property>
@@ -82,9 +82,9 @@
    <widget class="QLabel" name="lb_srcW">
     <property name="geometry">
      <rect>
-      <x>200</x>
+      <x>10</x>
       <y>50</y>
-      <width>481</width>
+      <width>160</width>
       <height>31</height>
      </rect>
     </property>
@@ -95,9 +95,9 @@
    <widget class="QLabel" name="lb_fld">
     <property name="geometry">
      <rect>
-      <x>200</x>
+      <x>10</x>
       <y>90</y>
-      <width>481</width>
+      <width>160</width>
       <height>31</height>
      </rect>
     </property>
@@ -111,7 +111,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>978</width>
+     <width>863</width>
      <height>21</height>
     </rect>
    </property>
