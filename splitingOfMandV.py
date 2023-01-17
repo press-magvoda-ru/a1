@@ -12,6 +12,60 @@ from datetime import datetime
 from functools import lru_cache
 from itertools import chain
 from collections import defaultdict
+
+
+def mainUI(in_srcM,in_srcW,in_fld):
+    from PyQt5 import QtWidgets, uic
+    def baseof(path):
+        return  os.path.dirname(path)
+    frm_cls = uic.loadUiType(f"{baseof(__file__)}\guiForPairing.ui")[0]
+    class mn_Window(QtWidgets.QMainWindow, frm_cls):
+        def __init__(self, parent=None):
+            QtWidgets.QMainWindow.__init__(self, parent)
+            self.setupUi(self)
+            self.lb_srcM.text=self.srcM=in_srcM.replace('/','\\')
+            self.lb_srcW.text=self.srcW=in_srcW.replace('/','\\')
+            self.lb_fld.text=self.fld=in_fld.replace('/','\\')
+            self.pButt_srcM.clicked.connect(self.choose_srcM)
+            self.pButt_srcW.clicked.connect(self.choose_srcW)
+            self.pButt_fld.clicked.connect(self.choose_fld)
+            self.pButt_start_and_done.clicked.connect(self.run_run)
+        def choose_srcM(self):
+            #self.lb_srcM.text=
+            self.srcM=str(QtWidgets.QFileDialog.getExistingDirectory(self, "Select Directory")).replace('/','\\') or self.srcM
+            self.pButt_srcM.setText(self.srcM)
+        def choose_srcW(self):
+            self.srcW = str(QtWidgets.QFileDialog.getExistingDirectory(self, "Select Directory")).replace('/','\\') or self.srcW
+            self.pButt_srcW.setText(self.srcW)
+        def choose_fld(self):
+            self.fld = str(QtWidgets.QFileDialog.getExistingDirectory(self, "Select Directory")).replace('/','\\') or self.fld
+            self.pButt_fld.setText(self.fld)
+        def run_run(self):
+            if not os.path.isdir(self.fld):
+                os.mkdir(self.fld)
+            os.chdir(self.fld)
+            os.system(f'start "" "{self.fld}"')
+            print(self.srcM,self.srcW,self.fld)
+            M_data_spliting(self.srcM, self.fld)
+            W_data_spliting(self.srcW, self.fld)
+            pprint.pprint(rname, stream=open(
+                join(self.fld, name2str(f'{rname=}')), 'w'), width=333)  # nero are
+            WM_mergeFromMultiPagePdf(self.fld, self.fld, self.fld)
+            exit()
+
+
+
+
+
+
+
+    app = QtWidgets.QApplication(sys.argv)
+    myWindow = mn_Window()
+    myWindow.show()
+    app.exec()
+    # exit()
+    return ['','','']
+
 inN, = 9,
 de_ug = None
 #de_ug = 1
@@ -77,6 +131,7 @@ def inSubProcM(Tp, base, prt):
 
 def M_data_spliting(src, of):
     src, Tp, = dirend(src), 'M',
+
     stdout, sys.stdout = sys.stdout, open(
         (of := of+f'\\_{Tp}{rezname.rezname()}')+'.txt', 'w')
     print(f">{Tp} start: {datetime.now()}")
@@ -151,17 +206,13 @@ def main(root, rout=None):
     rout = rout or root
     # тЭсто сливание сразу из pdf
     srcM, srcW, = (f'{root}{"_mek_nov_shrt"}',
-                   f'{root}{"_w_nov_shrt"}') if de_ug else (f'{root}"_mek_nov"', f'{root}{"_w_nov"}',)
+                   f'{root}{"_w_nov_shrt"}') if de_ug else (f'{root}{"_mek_dec"}', f'{root}{"_w_t_dec"}',)
+                   #_mek_dec
+                   #_mek_dec_1ZYX
     print(root, rout, srcM, srcW, sep="\t")
-    # MW for 1st 2nd then all
-    os.mkdir(fld := f'{rout}\\MW{rezname.rezname()}\\')
-    os.chdir(fld)
+    mainUI(srcM,srcW,join(rout,f'MW{rezname.rezname()}'))
+    
 
-    M_data_spliting(srcM, fld)
-    W_data_spliting(srcW, fld)
-    pprint.pprint(rname, stream=open(
-        join(fld, name2str(f'{rname=}')), 'w'), width=333)  # nero are
-    WM_mergeFromMultiPagePdf(fld, fld, fld)
 
 
 # различные DS(ах если бы - чисто воборьи и пушки) для быстро-быстрого паренья:
