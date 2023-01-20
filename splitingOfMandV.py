@@ -16,8 +16,7 @@ from collections import defaultdict
 
 def mainUI(in_srcM,in_srcW,in_fld):
     from PyQt5 import QtWidgets, uic
-    def baseof(path): return  os.path.dirname(path)
-    frm_cls = uic.loadUiType(f"{baseof(__file__)}\guiForPairing.ui")[0]
+    frm_cls = uic.loadUiType(f"{os.path.dirname(__file__)}\guiForPairing.ui")[0]
     class mn_Window(QtWidgets.QMainWindow, frm_cls):
         def __init__(self, parent=None):
             QtWidgets.QMainWindow.__init__(self, parent)
@@ -50,13 +49,14 @@ def mainUI(in_srcM,in_srcW,in_fld):
             pprint.pprint(rname, stream=open(
                 join(fld, name2str(f'{rname=}')), 'w'), width=333)  # nero are
             WM_mergeFromMultiPagePdf(fld, fld, fld)
+            sys.exit()
     app = QtWidgets.QApplication(sys.argv)
     myWindow = mn_Window()
     myWindow.show()
     app.exec()
     return ['','','']
 
-inN, = 9,
+inN =os.cpu_count()+1 #9,
 de_ug = None
 #de_ug = 1
 
@@ -118,6 +118,13 @@ def inSubProcM(Tp, base, prt):
         pagestxt.write('}')
     print(timing.log(f'{i-base:<7}{pid:>5}', f'{pid:05}'), flush=True)
 
+def lstpdf(src):
+    lst=[]
+    for r,d,f in os.walk(src):
+        for file in f:
+            if file.endswith('.pdf'): lst.append(os.path.join(r,file))
+    return lst
+
 
 def M_data_spliting(src, of):
     src, Tp, = dirend(src), 'M',
@@ -125,8 +132,8 @@ def M_data_spliting(src, of):
         (of := of+f'\\_{Tp}{rezname.rezname()}')+'.txt', 'w')
     print(f">{Tp} start: {datetime.now()}")
     print(timing.log(f'mainpid', f':{mainpid=:05} {inN=:^20}'), flush=True)
-    add2Hn(lfiles := sorted(
-        os.popen(f'dir {src}/s/b|wsl grep pdf').read().splitlines(), key=weightMek, reverse=True))
+    #add2Hn(lfiles := sorted(os.popen(f'dir {src}/s/b|wsl grep pdf').read().splitlines(), key=weightMek, reverse=True))
+    add2Hn(lfiles := sorted(lstpdf(src), key=weightMek, reverse=True))
     (base, procs, chunks,) = (0, [], toNparts(lfiles, inN, Mpages2time, weightMek))
     for chunk in chunks:  # [:-1]):
         proc = mp.Process(target=inSubProcM, args=(Tp, base, chunk))
@@ -165,8 +172,8 @@ def W_data_spliting(src, of):
         (of := of+f'\\_{Tp}{rezname.rezname()}')+'.txt', 'w')
     print(f">{Tp} start:{datetime.now()}")
     print(timing.log(f'mainpid', f':{mainpid=:05} {inN=:^20}'), flush=True)
-    add2Hn(lfiles := sorted(os.popen(
-        f'dir {src}/s/b|wsl grep -v Сопро|wsl grep pdf').read().splitlines(), key=weightWT, reverse=True))
+    #add2Hn(lfiles := sorted(os.popen(f'dir {src}/s/b|wsl grep -v Сопро|wsl grep pdf').read().splitlines(), key=weightWT, reverse=True))
+    add2Hn(lfiles := sorted(lstpdf(src), key=weightWT, reverse=True))
     base, procs, chunks, = 0, [], toNparts(lfiles, inN, Wpages2time, weightWT)
     for chunk in chunks:
         proc = mp.Process(target=inSubProcW, args=(Tp, base, chunk))
@@ -605,6 +612,7 @@ def buildBaseOf(srcW, srcM):
 
 
 if __name__ == '__main__':
+    mp.freeze_support()
     root = rezname.getArgOr(1, dirname(dirname(__file__)), 'Dir')
     print(f':\t Начало', timing.log('', f'{timing.pred-timing.base}'))
     main(join(root, ''))
