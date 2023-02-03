@@ -1,5 +1,5 @@
 from reparseWxMx import prsM, prsW, Pg, Hn, rname, name2str, add2Hn
-from collections import namedtuple
+from collections import namedtuple,defaultdict
 from os.path import dirname, join, basename
 import timing
 import pprint
@@ -11,7 +11,6 @@ import multiprocessing as mp
 from datetime import datetime
 from functools import lru_cache
 from itertools import chain
-from collections import defaultdict
 
 
 def mainUI(in_srcM,in_srcW,in_fld):
@@ -239,7 +238,7 @@ def savepdfW(doc, name, fld, sz, sbj=2):
 def savepdfM(doc, name, fld, sbj=''):
     if (p := doc.page_count):
         savepdf2(doc, join(fld, z := f'{name:0}{sbj:^3}{p:05}.pdf'))
-
+ 
 
 def fromTo(src, p, dst):
     dst.insert_pdf(src, from_page=p, to_page=p, links=0, annots=0, final=False)
