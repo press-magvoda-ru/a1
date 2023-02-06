@@ -1,16 +1,18 @@
-from reparseWxMx import prsM, prsW, Pg, Hn, rname, name2str, add2Hn
-from collections import namedtuple,defaultdict
-from os.path import dirname, join, basename
-import timing
-import pprint
-import rezname
-import fitz
-import os
-import sys
 import multiprocessing as mp
+import os
+import pprint
+import sys
+from collections import defaultdict, namedtuple
 from datetime import datetime
 from functools import lru_cache
 from itertools import chain
+from os.path import basename, dirname, join
+
+import fitz
+
+import rezname
+import timing
+from reparseWxMx import Hn, Pg, add2Hn, name2str, prsM, prsW, rname
 
 
 def mainUI(in_srcM,in_srcW,in_fld):
@@ -99,6 +101,13 @@ def toNparts(lfs, n, p2t, wf):
     return rez
 
 
+def lstInWithExtention(src,ext='.pdf'):
+    lst=[]
+    for r,d,f in os.walk(src):
+        for file in f:
+            if file.endswith(ext): lst.append(os.path.join(r,file))
+    return lst
+
 def inSubProcM(Tp, base, prt):
     i, pid = base, os.getpid()
     print(f'>>{Tp} from {prt.i} {os.getpid()} {os.getcwd()}')
@@ -117,12 +126,7 @@ def inSubProcM(Tp, base, prt):
         pagestxt.write('}')
     print(timing.log(f'{i-base:<7}{pid:>5}', f'{pid:05}'), flush=True)
 
-def lstpdf(src):
-    lst=[]
-    for r,d,f in os.walk(src):
-        for file in f:
-            if file.endswith('.pdf'): lst.append(os.path.join(r,file))
-    return lst
+
 
 
 def M_data_spliting(src, of):
@@ -131,8 +135,7 @@ def M_data_spliting(src, of):
         (of := of+f'\\_{Tp}{rezname.rezname()}')+'.txt', 'w')
     print(f">{Tp} start: {datetime.now()}")
     print(timing.log(f'mainpid', f':{mainpid=:05} {inN=:^20}'), flush=True)
-    #add2Hn(lfiles := sorted(os.popen(f'dir {src}/s/b|wsl grep pdf').read().splitlines(), key=weightMek, reverse=True))
-    add2Hn(lfiles := sorted(lstpdf(src), key=weightMek, reverse=True))
+    add2Hn(lfiles := sorted(lstInWithExtention(src), key=weightMek, reverse=True))
     (base, procs, chunks,) = (0, [], toNparts(lfiles, inN, Mpages2time, weightMek))
     for chunk in chunks:  # [:-1]):
         proc = mp.Process(target=inSubProcM, args=(Tp, base, chunk))
@@ -171,8 +174,7 @@ def W_data_spliting(src, of):
         (of := of+f'\\_{Tp}{rezname.rezname()}')+'.txt', 'w')
     print(f">{Tp} start:{datetime.now()}")
     print(timing.log(f'mainpid', f':{mainpid=:05} {inN=:^20}'), flush=True)
-    #add2Hn(lfiles := sorted(os.popen(f'dir {src}/s/b|wsl grep -v Сопро|wsl grep pdf').read().splitlines(), key=weightWT, reverse=True))
-    add2Hn(lfiles := sorted(lstpdf(src), key=weightWT, reverse=True))
+    add2Hn(lfiles := sorted(lstInWithExtention(src), key=weightWT, reverse=True))
     base, procs, chunks, = 0, [], toNparts(lfiles, inN, Wpages2time, weightWT)
     for chunk in chunks:
         proc = mp.Process(target=inSubProcW, args=(Tp, base, chunk))
@@ -193,17 +195,17 @@ def W_data_spliting(src, of):
     return of
 def main(root, rout=None):
     rout = rout or root
-    srcM, srcW, = (f'{root}{"_mek_nov_shrt"}',
-                   f'{root}{"_w_nov_shrt"}') if de_ug else (f'{root}{"_mek_dec"}', f'{root}{"_w_t_dec"}',)
+    srcM, srcW, = (f'{root}{"_mek__shrt"}',
+                   f'{root}{"_w__shrt"}') if de_ug else (f'{root}{"_mek_dec"}', f'{root}{"_w_t_dec"}',)
     mainUI(join(root,'_mek'),join(root,'_w_t'),join(rout,f'MW{rezname.rezname()}'))
 
 # различные DS(ах если бы - чисто воборьи и пушки) для быстро-быстрого паренья:
 W, M, bdB = None, None, defaultdict(list)
-bdByAdr = defaultdict(list)
-Wpa, Mpa = defaultdict(list), defaultdict(list)
-emptyEls = []
+#bdByAdr = defaultdict(list)
+#Wpa, Mpa = defaultdict(list), defaultdict(list)
+#emptyEls = []
 # outFileName = 'bdB.defaultdict.txt'
-Wfa, Mfa = defaultdict(list), defaultdict(list)
+#Wfa, Mfa = defaultdict(list), defaultdict(list)
 
 # WfaMfa - таблица пересечений - список общих(парных) в возрастающем по Wfa номерам - пора бы и pandas подсобить сюдыть
 WbyM = {}  # { HnW:{HnM:{номерв(HnM):номерв(HnW)}}} ...
@@ -444,8 +446,6 @@ def buildWowDataStructureTM(WW, MM, ofld):
 
 
 import obsolete
-
-
 
 if __name__ == '__main__':
     mp.freeze_support()

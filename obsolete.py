@@ -1,4 +1,10 @@
-    
+#some src changed on more portable(for pyinst):
+    #add2Hn(lfiles := sorted(os.popen(f'dir {src}/s/b|wsl grep pdf').read().splitlines(), key=weightMek, reverse=True))
+    #add2Hn(lfiles := sorted(os.popen(f'dir {src}/s/b|wsl grep -v Сопро|wsl grep pdf').read().splitlines(), key=weightWT, reverse=True))
+
+
+
+
 #from def buildWowDataStructureTM(WW, MM, ofld):
 def loc_temp():
     # saving rest from BdB (m then w cose kekeke :
@@ -26,6 +32,10 @@ def loc_temp():
     
     # остатки(незамаскированные мековские)
 def WM_mergingFromOnePages(srcW, srcM, outfld):
+    import fitz,os,timing,rezname   # added in obsolete for suppress pylint
+    def getinfo():None              # added in obsolete for suppress pylint
+    bd={}                           # added in obsolete for suppress pylint
+
     out2, count2, out1, count1, T, i = fitz.open(), 0, fitz.open(), 0, '2', 0
     srcW = srcW or f'{outfld}\\{"Wrez_2022-12-01 17-31-08"}'
     srcM = srcM or f'{outfld}\\{"Mrez_2022-12-05 18-28-45"}'
