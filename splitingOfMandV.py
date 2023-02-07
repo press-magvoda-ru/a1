@@ -140,7 +140,7 @@ def M_data_spliting(src, of):
     sys.stdout = stdout
     numOfGoodPages=open('mTotB','r').readlines().__len__() -2 #{} проще из размера(max(keys)) словаря
     def f(lfiles):
-        return sum(fitz.open(f).page_count for f in lfiles)
+        return sum(weightWT(f) for f in lfiles)
     return {'of':of,'kvits':numOfGoodPages,'pages':f(lfiles)} # namedtuple in next season :)
 def inSubProcW(Tp, base, prt):
     i, pid = base, os.getpid()
