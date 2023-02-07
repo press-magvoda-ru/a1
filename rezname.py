@@ -12,7 +12,7 @@ def getArgOr(pos, default, isDir=None):
 
 
 def rezname():
-    return 'rez_'+f'{datetime.now().strftime("%Y-%m-%d %H-%M-%S")}'
+    return 'rez_'+f'{datetime.now().strftime("%Y-%m-%d__%H-%M-%S")}'
 
 
 # чисто обвязка:

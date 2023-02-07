@@ -1,3 +1,12 @@
+#some none flyed DataStruct's:
+#bdByAdr = defaultdict(list)
+#Wpa, Mpa = defaultdict(list), defaultdict(list)
+#emptyEls = []
+# outFileName = 'bdB.defaultdict.txt'
+#Wfa, Mfa = defaultdict(list), defaultdict(list)
+# WfaMfa - таблица пересечений - список общих(парных) в возрастающем по Wfa номерам - пора бы и pandas подсобить сюдыть
+
+
 #some src changed on more portable(for pyinst):
     #add2Hn(lfiles := sorted(os.popen(f'dir {src}/s/b|wsl grep pdf').read().splitlines(), key=weightMek, reverse=True))
     #add2Hn(lfiles := sorted(os.popen(f'dir {src}/s/b|wsl grep -v Сопро|wsl grep pdf').read().splitlines(), key=weightWT, reverse=True))

@@ -1,20 +1,17 @@
 import multiprocessing as mp
-import os
-import pprint
-import sys
+import os, pprint, sys
 from collections import defaultdict, namedtuple
 from datetime import datetime
 from functools import lru_cache
 from itertools import chain
 from os.path import basename, dirname, join
-
-import fitz
-
-import rezname
-import timing
+import fitz, rezname, timing
 from reparseWxMx import Hn, Pg, add2Hn, name2str, prsM, prsW, rname
-
-
+def mkmk(fld): # утилита для mainUI
+    if not os.path.isdir(fld):
+        os.mkdir(fld)
+    os.chdir(fld)
+    os.system(f'start "" "{fld}"')
 def mainUI(in_srcM,in_srcW,in_fld):
     from PyQt5 import QtWidgets, uic
     frm_cls = uic.loadUiType(f"{os.path.dirname(__file__)}\guiForPairing.ui")[0]
@@ -28,6 +25,7 @@ def mainUI(in_srcM,in_srcW,in_fld):
             self.b_srcM.clicked.connect(self.choose_srcM)
             self.b_srcW.clicked.connect(self.choose_srcW)
             self.b_fld.clicked.connect(self.choose_fld)
+            self.b_chekMEK.clicked.connect(self.chekMEK)
             self.b_start_and_done.clicked.connect(self.run_run)
         def choose_srcM(self):
             if (t:=str(QtWidgets.QFileDialog.getExistingDirectory(self, "Select Directory")).replace('/','\\')):
@@ -38,14 +36,24 @@ def mainUI(in_srcM,in_srcW,in_fld):
         def choose_fld(self):
             if (t:=str(QtWidgets.QFileDialog.getExistingDirectory(self, "Select Directory")).replace('/','\\')):
                 self.b_fld.setText(t)
-        def run_run(self):
+        def chekMEK(self):
             srcM,srcW,fld=self.b_srcM.text(),self.b_srcW.text(),self.b_fld.text()
+            mkmk(fld)
+            stdout, sys.stdout = sys.stdout, open(f'{(nm:=rezname.rezname()+"_rep.1.txt")}','w')
+            print(f'{rezname.rezname()}')
             if not os.path.isdir(fld):
                 os.mkdir(fld)
-            os.chdir(fld)
-            os.system(f'start "" "{fld}"')
+            MMM=M_data_spliting(srcM,fld)
+            print(f"общее количество страниц   :{MMM['pages']:^10}\n"
+                  f"общее количество квитанций :{MMM['kvits']:^10}")
+            sys.stdout.close()
+            os.system(f'start "" {nm}')
+            sys.stdout=stdout
+        def run_run(self):
+            srcM,srcW,fld=self.b_srcM.text(),self.b_srcW.text(),self.b_fld.text()
+            mkmk(fld)
             print(srcM,srcW,fld)
-            M_data_spliting(srcM, fld)
+            M_data_spliting(srcM, fld) # если чек т.е есть mTotB был то воспользоваться УЖОЙным M_
             W_data_spliting(srcW, fld)
             pprint.pprint(rname, stream=open(
                 join(fld, name2str(f'{rname=}')), 'w'), width=333)  # nero are
@@ -56,33 +64,23 @@ def mainUI(in_srcM,in_srcW,in_fld):
     myWindow.show()
     app.exec()
     return ['','','']
-
-inN =os.cpu_count()+1 #9,
-de_ug = None
-#de_ug = 1
-
+inN, de_ug =os.cpu_count()+1, 0 
 Nparts = namedtuple('Nparts', 's c i')
 Wshort = namedtuple('Wshort', 'weight Hn wm w')
-Mfrom, Wfrom = {}, {}
-
-(mainpid,) = (os.getpid(),)
+Mfrom, Wfrom, mainpid = {}, {}, os.getpid()
 def dirend(pathofdir): return join(pathofdir, '')
 def LinesOfFileName(pathofFile): return open(pathofFile).read().splitlines()
-
-
 @lru_cache(maxsize=999)
 def weightMek(a):
-    if (nm := int(basename(a).split('-')[4])) == (rl := fitz.open(a).page_count):
-        return nm
-    print(
-        f'!!!Файл:{a} из имени: {nm} по факту: {rl}  оно(кол-во) !=')
+    try:
+        if ((rl := fitz.open(a).page_count))==(nm := int(basename(a).split('-')[4])): return nm
+    except:
+        print(f'!!!Файл:{a} - Не форматное имя  +{rl} к различению общего числа (страниц VS квитанций')
+        return 0         #TODO write in table bads of mek-file-pdf with massage
+    print(f'!!!Файл:{a} из имени: {nm} по факту: {rl}  имя не != содержимому')
     return rl
-
-
 @lru_cache(maxsize=256)
 def weightWT(a): return fitz.open(a).page_count
-
-
 # ... из предположения что удвоение учетверяет ( хотя по факту утраивает)
 # словарь/список (пока нет) с аппроксимацией - число_страниц_файла->время_на_файл :
 Mpages2time = {n: (0.004+0.005/2000*n)*n for n in range(9999)}
@@ -90,8 +88,6 @@ Mpages2time = {n: (0.004+0.005/2000*n)*n for n in range(9999)}
 # (0.004+0.006/2000*n)*n for n in range(9999)}
 Wpages2time = {n: n for n in range(9999)}
 def SumMap(wf, l): return sum(map(wf, l))
-
-
 def toNparts(lfs, n, p2t, wf):
     """Разбивка {lfs} на {n} близковзвешенных по сумме {p2t[wf(i)]} частей"""  # if n < 2: return [lfs]
     rez = [Nparts([0], [], i+1) for i in range(n)]
@@ -99,21 +95,18 @@ def toNparts(lfs, n, p2t, wf):
         (v := min(rez)).s[0] += p2t[wf(e)]
         v.c.append(e)
     return rez
-
-
 def lstInWithExtention(src,ext='.pdf'):
     lst=[]
     for r,d,f in os.walk(src):
         for file in f:
             if file.endswith(ext): lst.append(os.path.join(r,file))
     return lst
-
 def inSubProcM(Tp, base, prt):
     i, pid = base, os.getpid()
     print(f'>>{Tp} from {prt.i} {os.getpid()} {os.getcwd()}')
     pagestxt = open(f'M{prt.i:>03}', 'w')  # {pid:>6}
     if (prt.i == 1):  # само пикленье Рика
-        pagestxt.write('{')
+        pagestxt.write('{\n')
     print(f'{prt.i=:^3} weght:{prt.s[0]:^17.3f} {pid=:^7}len={len(prt.c):>4} ',
           f' '.join(f'{weightMek(f)}'for f in prt.c), end=' END\n')
     for inp in (fitz.open(f) for f in prt.c):
@@ -125,14 +118,9 @@ def inSubProcM(Tp, base, prt):
     if (prt.i == inN):
         pagestxt.write('}')
     print(timing.log(f'{i-base:<7}{pid:>5}', f'{pid:05}'), flush=True)
-
-
-
-
 def M_data_spliting(src, of):
     src, Tp, = dirend(src), 'M',
-    stdout, sys.stdout = sys.stdout, open(
-        (of := of+f'\\_{Tp}{rezname.rezname()}')+'.txt', 'w')
+    stdout, sys.stdout = sys.stdout, open((of := of+f'\\_{Tp}{rezname.rezname()}')+'.txt', 'w')
     print(f">{Tp} start: {datetime.now()}")
     print(timing.log(f'mainpid', f':{mainpid=:05} {inN=:^20}'), flush=True)
     add2Hn(lfiles := sorted(lstInWithExtention(src), key=weightMek, reverse=True))
@@ -150,7 +138,10 @@ def M_data_spliting(src, of):
     os.system('del m???')
     print(timing.log('mTotB', of))
     sys.stdout = stdout
-    return of
+    numOfGoodPages=open('mTotB','r').readlines().__len__() -2 #{} проще из размера(max(keys)) словаря
+    def f(lfiles):
+        return sum(fitz.open(f).page_count for f in lfiles)
+    return {'of':of,'kvits':numOfGoodPages,'pages':f(lfiles)} # namedtuple in next season :)
 def inSubProcW(Tp, base, prt):
     i, pid = base, os.getpid()
     print(f'>>{Tp} from {prt.i} {os.getpid()} {os.getcwd()}')
@@ -187,9 +178,7 @@ def W_data_spliting(src, of):
     print(f">{Tp}   end:{datetime.now()}")
     os.system('copy /b w??? wTotB')
     os.system('del w???')
-
     print(timing.log('wTotB', of))
-
     sys.stdout = stdout
     os.chdir(dirname(src))
     return of
@@ -198,16 +187,8 @@ def main(root, rout=None):
     srcM, srcW, = (f'{root}{"_mek__shrt"}',
                    f'{root}{"_w__shrt"}') if de_ug else (f'{root}{"_mek_dec"}', f'{root}{"_w_t_dec"}',)
     mainUI(join(root,'_mek'),join(root,'_w_t'),join(rout,f'MW{rezname.rezname()}'))
-
 # различные DS(ах если бы - чисто воборьи и пушки) для быстро-быстрого паренья:
 W, M, bdB = None, None, defaultdict(list)
-#bdByAdr = defaultdict(list)
-#Wpa, Mpa = defaultdict(list), defaultdict(list)
-#emptyEls = []
-# outFileName = 'bdB.defaultdict.txt'
-#Wfa, Mfa = defaultdict(list), defaultdict(list)
-
-# WfaMfa - таблица пересечений - список общих(парных) в возрастающем по Wfa номерам - пора бы и pandas подсобить сюдыть
 WbyM = {}  # { HnW:{HnM:{номерв(HnM):номерв(HnW)}}} ...
 MbyW = {}
 
@@ -284,24 +265,20 @@ def inSubMekOnes(unk, kMv, i):
 def buildWowDataStructureTM(WW, MM, ofld):
     os.chdir(ofld)  # на усях слу
     print(timing.log('3.-2', "buildWowDataStructureTM:"))
-    AllByAdrs = []
-    for k, v in chain(WW.items(), MM.items()):
-        AllByAdrs.append(v)  # или тут
-    # собственно здесь нужное отображение втулить из W|M строк адресса в "норм"
-
-    def simpleAdr(v):
-        return v.adr.replace('корп.', '%').replace(',кв.', ' ').replace(',д.', ' ')\
-            .replace(',д.', ' ').replace('.', ' ').split(' ', 1)[-1].replace(',', ' ').strip()
-
-    AllByAdrs.sort(key=simpleAdr)
-    print(timing.log('3.-1builded', ":AllByAdrs:"))
-    print('AllByAdrs:')
-    pprint.pprint(AllByAdrs, stream=(ou := open('AllByAdrs.dict', 'w')))
-    ou.close()
-    print(timing.log('3.-1', ":AllByAdrs"))
-
-    # привет 202№!
-
+    def mkAllByAdrs():
+        AllByAdrs = []
+        for k, v in chain(WW.items(), MM.items()):
+            AllByAdrs.append(v)  # или тут   # собственно здесь нужное отображение втулить из W|M строк адресса в "норм"
+        def simpleAdr(v):
+            return v.adr.replace('корп.', '%').replace(',кв.', ' ').replace(',д.', ' ')\
+                .replace(',д.', ' ').replace('.', ' ').split(' ', 1)[-1].replace(',', ' ').strip()
+        AllByAdrs.sort(key=simpleAdr)
+        print(timing.log('3.-1builded', ":AllByAdrs:"))
+        print('AllByAdrs:')
+        pprint.pprint(AllByAdrs, stream=(ou := open('AllByAdrs.dict', 'w')))
+        ou.close()
+        print(timing.log('3.-1', ":AllByAdrs"))
+    # привет 202№!  тахионы ушли в путь
     for k, v in WW.items():
         if v.els not in bdB:
             bdB[v.els] = {'c': 0, 'w': 0, 'm': 0, 'wm': 0, 'l': []}
@@ -334,21 +311,11 @@ def buildWowDataStructureTM(WW, MM, ofld):
     for k, v in bdB.items():
         if (cur := v)['w'] == 1 and cur['m'] == 1:
             for e in cur['l']:
-                if e[1] == 1:
-                    e[1] = 3
-                    # очевидно непарный M в конце. при пакетном все W затем все M
-                    e.append(cur['l'].pop()[-1])
-                    cur['w'] -= 1
-                    cur['m'] -= 1
-                    cur['wm']+1
-                    break
-
-    # here on bdB сопоставление по адресам (по первости только среди безelsных)
+                if e[1] == 1:   # очевидно непарный M в конце. при пакетном все W затем все M
+                    e[1] = 3;e.append(cur['l'].pop()[-1]);cur['w'] -= 1;cur['m'] -= 1;cur['wm']+1;break
+    # TODO? here on bdB сопоставление по адресам (по первости только среди безelsных)
     # ---
-
-    print(timing.log('3', "Построение словаря елс'ок с парнованием ежель чё"))
-    # сборка адрессного стола чиста ради прикидки чё как
-
+    print(timing.log('3', "Построение словаря елс'ок с парнованием ежель чё")) # сборка адрессного стола чиста ради прикидки чё как
     for k, v in rname.items():
         if k[0] == 'M':
             Mfrom[k] = fitz.open(v)
@@ -356,16 +323,10 @@ def buildWowDataStructureTM(WW, MM, ofld):
                        'S': defaultdict(int), }
         if k[0] == 'W':
             Wfrom[k] = fitz.open(v)
-
-    out, out1 = fitz.open(), fitz.open()
-    tf = 'imposible'
     os.mkdir(unk := join(ofld, "WMpdfs"))
     os.system(f'start "Квитанции с водой" "{unk}"')
-
     # перегрупировка пар из bdB в Wlst[]
-    Wlst = []
-    usedWnames = set()
-
+    Wlst, usedWnames = [], set()
     for k, v in WW.items():
         if (vHn := v.Hn) not in usedWnames:
             usedWnames.add(vHn)
@@ -387,10 +348,8 @@ def buildWowDataStructureTM(WW, MM, ofld):
             z['b'] += 1
             cur['l'].append(tt)  # kekeke for [num,1,w]
         z['c'] += 1
-
     for e in Wlst:
-        e.weight[0] = 2*len(e.wm)+len(e.w)  # чисто просто ага
-    # не факт?!(см .s :)) что поля в порядке имен типа :0
+        e.weight[0] = 2*len(e.wm)+len(e.w)  # чисто просто ага  # не факт?!(см .s :)) что поля в порядке имен типа :0
     Wlst.sort(key=lambda e: e.weight[0], reverse=True)
     procs, chunks = [], [Nparts([0], [], i+1)
                          for i in range(inN)]  # ибо память ram?
@@ -405,48 +364,38 @@ def buildWowDataStructureTM(WW, MM, ofld):
         proc.join()
     print(timing.log('totalW_data_merging', "ПарамПамПам"))
     print(f">WWW   end:{datetime.now()}")
-
-    os.mkdir(unk := join(ofld, 'MekOnes'))
-    procs, = [],
-    rnr = {k: (v, list(MbyW[k]['p']))
-           for k, v in rname.items() if k[0] == 'M' and MbyW[k]['p']}
-    for i in range(inN):
-        proc = mp.Process(target=inSubMekOnes, args=(unk, rnr, i))
-        procs.append(proc)
-        proc.start()
-    for proc in procs:
-        proc.join()
-
+   #TODO случай чисто нечётных мэк файлов - вставка 0-чётных страниц вместо 
+   #росписи несопоставленных(часть размажется по зацепленным пачкам воды - логика ХЗ1) 
+    def HEREOTHER1():
+        os.mkdir(unk := join(ofld, 'MekOnes'))
+        procs, = [],
+        rnr = {k: (v, list(MbyW[k]['p']))
+            for k, v in rname.items() if k[0] == 'M' and MbyW[k]['p']}
+        for i in range(inN):
+            proc = mp.Process(target=inSubMekOnes, args=(unk, rnr, i))
+            procs.append(proc)
+            proc.start()
+        for proc in procs:
+            proc.join()
     pprint.pprint(
         {k: {'p': (len(v['p']), v['p']), 'S': dict(v['S'])}for k, v in MbyW.items()}, width=99999999,
         stream=open(join(ofld, 'MbyW'), 'w'))
     print(timing.log('4_1', ":MbyW"))
-
     pprint.pprint(WbyM, width=99999999, stream=open(join(ofld, 'WbyM'), 'w'))
     print(timing.log('4_2', ":WbyM"))
-
-   
-   
-   
-   
     print('bdB:')
     pprint.pprint({k: (len(v['l']), v)
                   for k, v in bdB.items() if len(v['l']) > 1}, stream=open(join(ofld, 'bdB'), 'w'))
     print(timing.log('4_3', ":bdB"))
-
-    adrlist=[]
-    for k,v in bdB.items():
-        for e in v['l']:
-            adrlist.append(e[-1])
-   
-    adrlist.sort(key=lambda a:a.adr)
-    pprint.pprint(adrlist, stream=open(join(ofld, 'adrlist'), 'w'))
-
+    def MKadrlist():
+        adrlist=[]
+        for k,v in bdB.items():
+            for e in v['l']:
+                adrlist.append(e[-1])
+        adrlist.sort(key=lambda a:a.adr)
+        pprint.pprint(adrlist, stream=open(join(ofld, 'adrlist'), 'w'))
     print(timing.log('4_E', "Отсохронялись"))
-
-
 import obsolete
-
 if __name__ == '__main__':
     mp.freeze_support()
     root = rezname.getArgOr(1, dirname(dirname(__file__)), 'Dir')

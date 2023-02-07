@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>863</width>
+    <width>1026</width>
     <height>209</height>
    </rect>
   </property>
@@ -19,7 +19,7 @@
      <rect>
       <x>170</x>
       <y>10</y>
-      <width>666</width>
+      <width>611</width>
       <height>41</height>
      </rect>
     </property>
@@ -32,7 +32,7 @@
      <rect>
       <x>170</x>
       <y>50</y>
-      <width>666</width>
+      <width>741</width>
       <height>41</height>
      </rect>
     </property>
@@ -45,7 +45,7 @@
      <rect>
       <x>170</x>
       <y>90</y>
-      <width>666</width>
+      <width>741</width>
       <height>40</height>
      </rect>
     </property>
@@ -58,7 +58,7 @@
      <rect>
       <x>10</x>
       <y>140</y>
-      <width>826</width>
+      <width>901</width>
       <height>23</height>
      </rect>
     </property>
@@ -105,13 +105,26 @@
      <string>путь до результатом доволен</string>
     </property>
    </widget>
+   <widget class="QPushButton" name="b_chekMEK">
+    <property name="geometry">
+     <rect>
+      <x>780</x>
+      <y>10</y>
+      <width>131</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>чекМЭК(Отчёт№1)</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>863</width>
+     <width>1026</width>
      <height>21</height>
     </rect>
    </property>
