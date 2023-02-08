@@ -14,17 +14,26 @@ def name2str(fvareqvalue):  # name2str(f'{var=}')
 
 
 @lru_cache(999)
-def Hn(path):  # hash name from path
+def Hn(path,Tp='M'):  # hash name from path ;#Tp  in ['M','W']
     a = basename(path).split('.', 1)[0].split('-')
-    rez = f'M-{a[2]}-{a[5]}' if len(
-        a) == 6 else f"W-{'-'.join(dirname(path).split(sep)[-1].strip().replace('-',' ').split()[-2:])}"
-    rname[rez] = path  # путь до файла для сборки страниц в итоге
-    return rez
+    rez=''
+    if Tp=='M':
+        try:
+            rez = f'M-{a[2]}-{a[3]}-{a[4]}-{a[5]}' 
+        except Exception as e:
+            print(msg:=f'{e=} & {locals()=}')
+            raise Exception(msg)
+    if Tp=='W':
+        rez = f"W-{'-'.join(dirname(path).split(sep)[-1].strip().replace('-',' ').split()[-2:])}"
+    if rez:
+        rname[rez] = path  # полный абсолютный путь файла для сборки страниц в итоге
+        return rez
+    raise Exception(f"Неожиданный тип квитанции:{locals()=}")
 
 
-def add2Hn(paths):
+def add2Hn(paths,Tp='M'):
     for e in paths:
-        rname[Hn(e)] = e
+        rname[Hn(e,Tp)] = e
 
 
 def clearAdr(a):
@@ -35,14 +44,17 @@ def clearAdr(a):
 
 def prsM(page, file, pN):
     if file not in rname:
-        file = Hn(file)
+        file = Hn(file,'M')
     adr = page.split('\n', 1)[0].strip().replace('/', '%').replace(
         ', ', ',').replace('. ', '.').replace(' %', '%').replace('г Магнитогорск', '')
     # Вычищение adr
     adr = clearAdr(adr)
-
-    if adr[0] == '4' and adr[6] == ',':
-        adr = adr[7:]
+    try:
+        if adr[0] == '4' and adr[6] == ',':
+            adr = adr[7:]
+    except Exception as e:
+        print(f'from PrsM {page=} ,{file=} , {pN=} , {adr=} ')
+        raise e
     if not (l := page.split('Лицевой счет:', 1)[1]):
         return Pg(pN, file, '', '', '', '', adr)
     # print(l)
@@ -67,7 +79,7 @@ def prsW(page, src, pageNum):
     if not page.startswith('ЕДИНЫЙ'):
         return _cache_ofprsW  # вероятней всего это выехавшее за 1 страницу примечание
     if src not in rname:
-        src = Hn(src)
+        src = Hn(src,'W')
     page = page.replace('\xa0', ' ')
     els = '' if len(t := page.split('ЕЛС:', 1)) < 2 else t[1].split(
         '\n', 1)[0].replace(' ', '')

@@ -7,6 +7,8 @@ from itertools import chain
 from os.path import basename, dirname, join
 import fitz, rezname, timing
 from reparseWxMx import Hn, Pg, add2Hn, name2str, prsM, prsW, rname
+import inspect; __LINE__ = inspect.currentframe()
+print(__LINE__.f_lineno);print(__LINE__.f_lineno)
 def mkmk(fld): # утилита для mainUI
     if not os.path.isdir(fld):
         os.mkdir(fld)
@@ -54,6 +56,7 @@ def mainUI(in_srcM,in_srcW,in_fld):
             mkmk(fld)
             print(srcM,srcW,fld)
             M_data_spliting(srcM, fld) # если чек т.е есть mTotB был то воспользоваться УЖОЙным M_
+            #sys.exit() # checks names de_ug
             W_data_spliting(srcW, fld)
             pprint.pprint(rname, stream=open(
                 join(fld, name2str(f'{rname=}')), 'w'), width=333)  # nero are
@@ -110,10 +113,13 @@ def inSubProcM(Tp, base, prt):
     print(f'{prt.i=:^3} weght:{prt.s[0]:^17.3f} {pid=:^7}len={len(prt.c):>4} ',
           f' '.join(f'{weightMek(f)}'for f in prt.c), end=' END\n')
     for inp in (fitz.open(f) for f in prt.c):
-        Name = Hn(inp.name)
+        Name = Hn(inp.name,Tp)
         for p in range(szInp := inp.page_count):
-            pagestxt.write(
-                f'{(i := i+1):>6}:{prsM(inp.get_page_text(p), Name, p)},\n')
+            try:
+                pagestxt.write(f'{(i := i+1):>6}:{prsM(inp.get_page_text(p), Name, p)},\n')
+            except Exception as e:
+                print(f'{__LINE__.f_lineno=} :\n {locals()=}')
+                raise e
         print(timing.log(szInp, Name))
     if (prt.i == inN):
         pagestxt.write('}')
@@ -123,8 +129,10 @@ def M_data_spliting(src, of):
     stdout, sys.stdout = sys.stdout, open((of := of+f'\\_{Tp}{rezname.rezname()}')+'.txt', 'w')
     print(f">{Tp} start: {datetime.now()}")
     print(timing.log(f'mainpid', f':{mainpid=:05} {inN=:^20}'), flush=True)
-    add2Hn(lfiles := sorted(lstInWithExtention(src), key=weightMek, reverse=True))
-    (base, procs, chunks,) = (0, [], toNparts(lfiles, inN, Mpages2time, weightMek))
+    (lfiles := sorted(lstInWithExtention(src), key=weightMek, reverse=True))
+    MlFilteredFiles=[e for e in lfiles if basename(e).split('.', 1)[0].split('-')[5:]] #ПYAтыЙ йэлемент мила
+    add2Hn(MlFilteredFiles,Tp)
+    (base, procs, chunks,) = (0, [], toNparts(MlFilteredFiles, inN, Mpages2time, weightMek))
     for chunk in chunks:  # [:-1]):
         proc = mp.Process(target=inSubProcM, args=(Tp, base, chunk))
         procs.append(proc)
@@ -151,7 +159,7 @@ def inSubProcW(Tp, base, prt):
     print(f'{prt.i=:^3} weght:{prt.s[0]:^17.3f} {pid=:^7}len={len(prt.c):>4} ',
           f' '.join(f'{weightWT(f)}'for f in prt.c), end=' END\n')
     for inp in (fitz.open(f) for f in prt.c):
-        Name = Hn(inp.name)
+        Name = Hn(inp.name,Tp)
         for p in range(szInp := inp.page_count):
             pagestxt.write(
                 f'{(i := i+1):>6}:{prsW(inp.get_page_text(p),Name, p)},\n')
@@ -165,7 +173,7 @@ def W_data_spliting(src, of):
         (of := of+f'\\_{Tp}{rezname.rezname()}')+'.txt', 'w')
     print(f">{Tp} start:{datetime.now()}")
     print(timing.log(f'mainpid', f':{mainpid=:05} {inN=:^20}'), flush=True)
-    add2Hn(lfiles := sorted(lstInWithExtention(src), key=weightWT, reverse=True))
+    add2Hn(lfiles := sorted(lstInWithExtention(src), key=weightWT, reverse=True),Tp)
     base, procs, chunks, = 0, [], toNparts(lfiles, inN, Wpages2time, weightWT)
     for chunk in chunks:
         proc = mp.Process(target=inSubProcW, args=(Tp, base, chunk))
@@ -188,30 +196,19 @@ def main(root, rout=None):
                    f'{root}{"_w__shrt"}') if de_ug else (f'{root}{"_mek_dec"}', f'{root}{"_w_t_dec"}',)
     mainUI(join(root,'_mek'),join(root,'_w_t'),join(rout,f'MW{rezname.rezname()}'))
 # различные DS(ах если бы - чисто воборьи и пушки) для быстро-быстрого паренья:
-W, M, bdB = None, None, defaultdict(list)
-WbyM = {}  # { HnW:{HnM:{номерв(HnM):номерв(HnW)}}} ...
-MbyW = {}
-
-
+W, M, = None, None, 
+WbyM, MbyW = {}, {}  #WbyM is  { HnW:{HnM:{номерв(HnM):номерв(HnW)}}} ...
 def WM_mergeFromMultiPagePdf(srcW, srcM, outfld):
     global W, M  # , rname
-    def getPgs(path):
-        f = open(path)
-        txt = f.read()
-        rez = eval(txt)  # читаем словарь - куда деваться
-        return rez
+    def getPgs(path):return eval(open(path).read())  # читаем словарь - куда деваться
     buildWowDataStructureTM(W := getPgs(join(srcW, 'wTotB')),
                             M := getPgs(join(srcM, 'mTotB')), outfld)
-    # rname = getPgs(join(outfld, name2str(f'{rname=}')))
-
 pdfnum = 0
-
 def savepdf2(doc, name):
     global pdfnum
     doc.save(name, garbage=2, deflate=True)
     pdfnum = pdfnum+1
     print(timing.log(f'№{pdfnum:>03}', name))
-
 def savepdfW(doc, name, fld, sz, sbj=2):
     if (p := doc.page_count):
         p //= sbj
@@ -279,6 +276,7 @@ def buildWowDataStructureTM(WW, MM, ofld):
         ou.close()
         print(timing.log('3.-1', ":AllByAdrs"))
     # привет 202№!  тахионы ушли в путь
+    bdB =defaultdict(list)
     for k, v in WW.items():
         if v.els not in bdB:
             bdB[v.els] = {'c': 0, 'w': 0, 'm': 0, 'wm': 0, 'l': []}
@@ -348,6 +346,8 @@ def buildWowDataStructureTM(WW, MM, ofld):
             z['b'] += 1
             cur['l'].append(tt)  # kekeke for [num,1,w]
         z['c'] += 1
+
+
     for e in Wlst:
         e.weight[0] = 2*len(e.wm)+len(e.w)  # чисто просто ага  # не факт?!(см .s :)) что поля в порядке имен типа :0
     Wlst.sort(key=lambda e: e.weight[0], reverse=True)
@@ -402,3 +402,7 @@ if __name__ == '__main__':
     print(f':\t Начало', timing.log('', f'{timing.pred-timing.base}'))
     main(join(root, ''))
     timing.ender()
+
+
+#TODO TODO норм логгер это что?
+#TODO TODO изолировать∧стянуть∧вынести_в_синглтон_доступа∧абстрагировать имя мек-файлов
