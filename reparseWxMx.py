@@ -7,12 +7,9 @@ from os import sep
 # CluesOfPage('W',els,uuu,adr,src,pageNum,realuuu if realuuu!=uuu else ''))
 Pg = namedtuple('Pg', 'pN Hn u els pa sq adr')
 rname = {}
-
-
-def name2str(fvareqvalue):  # name2str(f'{var=}')
-    return fvareqvalue.split('=', 1)[0]
-
-
+def DictFromFile(path):
+    return eval(open(path).read())  # читаем словарь - куда деваться
+def name2str(fVAReqVALUE):return fVAReqVALUE.split('=', 1)[0] # name2str(f'{var=}')
 @lru_cache(999)
 def Hn(path,Tp='M'):  # hash name from path ;#Tp  in ['M','W']
     a = basename(path).split('.', 1)[0].split('-')
@@ -29,23 +26,18 @@ def Hn(path,Tp='M'):  # hash name from path ;#Tp  in ['M','W']
         rname[rez] = path  # полный абсолютный путь файла для сборки страниц в итоге
         return rez
     raise Exception(f"Неожиданный тип квитанции:{locals()=}")
-
-
 def add2Hn(paths,Tp='M'):
     for e in paths:
         rname[Hn(e,Tp)] = e
-
-
 def clearAdr(a):
-    b = a.replace(',кв.0', '__').replace(',кв.', '__').replace(',д.', '_').replace('.',' ').replace(',',' ')\
-        .strip().split(' ',1)[-1].split('ул.',1)[-1].strip()#.replace(' ','')
+    #return a
+    b = a.replace(',кв.', '__').replace(',д.', '_').replace(',ул ',',ул.')\
+        .replace(',пр-кт ',',пр-кт.').split('.',1)[-1].replace(' ','')
     return b
-
-
 def prsM(page, file, pN):
     if file not in rname:
         file = Hn(file,'M')
-    adr = page.split('\n', 1)[0].strip().replace('/', '%').replace(
+    adr = page.split('\n', 1)[0].strip().replace('/', '%').replace('Корпус','%').replace(
         ', ', ',').replace('. ', '.').replace(' %', '%').replace('г Магнитогорск', '')
     # Вычищение adr
     adr = clearAdr(adr)
@@ -60,20 +52,14 @@ def prsM(page, file, pN):
     # print(l)
     pa = l.split('\n', 1)[0].strip()  # ''.join([e for e in l.split('\n',1)[0]
     sqS = l.split('помещения:')[1].split(maxsplit=1)[0]
-
     els = els[0].split('\n', 1)[0].strip() if (
         els := (l.split('Площад', 1)[0]).split('ЕЛС:', 1)[1:]) else ''
     uuu = ''.join(l.split('Плательщики:', 1)[1].replace(' ', '').split('\n'))[
         :6].replace('.', '')  # ?method  remove all from {. }
-
     if (rez := timing.fltru(uuu)) != uuu:
         uuu = f'{rez}|{uuu}'
     return Pg(pN, file, uuu, els, pa, sqS, adr)
-
-
 _cache_ofprsW, b_c = {}, {ord(c): None for c in ' \xa0'}
-
-
 def prsW(page, src, pageNum):
     global _cache_ofprsW
     if not page.startswith('ЕДИНЫЙ'):
@@ -84,10 +70,9 @@ def prsW(page, src, pageNum):
     els = '' if len(t := page.split('ЕЛС:', 1)) < 2 else t[1].split(
         '\n', 1)[0].replace(' ', '')
     adr = (l := t[0].split('\n', 4))[1].replace('г.Магнитогорск', '').replace(
-        '/', '%').replace('"', "'").translate(b_c).replace('корп.', '%')
+        '/', '%').replace('"', "'").translate(b_c).replace('корп.', '%').replace('корп', '%') #+4
     # Вычищение adr
     adr = clearAdr(adr)
-
     uuu = l[2].split(':', 1)[-1].translate(b_c)
     pa = '' if len(u := page.split('ЛИЦЕВОЙ СЧЕТ:', 1)
                    ) < 2 else u[1].split('\n', 1)[0].replace(' ', '')
@@ -97,19 +82,12 @@ def prsW(page, src, pageNum):
     sqS.append('' if len(w := v[-1].split('Отапливаемая площадь:', 1))
                < 2 else w[1].split('\n', 1)[0].split()[0].replace(' ', ''))
     sqS = sqS[0]+'|'+sqS[1]
-
     if (rez := timing.fltru(uuu)) != uuu:
         uuu = f'{rez}|{uuu}'
-
     return (_cache_ofprsW := Pg(pageNum, src, uuu, els, pa, sqS, adr))
-
-
 """ from splitingOfMandV last
-
-
 #CluesOfPage('W',els,uuu,adr,src,pageNum,realuuu if realuuu!=uuu else ''))
 CluesOfPage=namedtuple('PageClues','type els uuu adr src pageNum realuuu')
-
 def prsM(page,pdf,pageNum):
     adr=page.split('\n',1)[0].strip().replace(
         '/','%').replace(', ',',').replace('. ','.').replace(' %','%').replace('г Магнитогорск','')
@@ -123,8 +101,6 @@ def prsM(page,pdf,pageNum):
     #return els,uuu,adr,realuuu if realuuu!=uuu else '',pdf,pageNum,'M'
     #need remap cose prsW is now
     return CluesOfPage(els,uuu,adr,realuuu if realuuu!=uuu else '',pdf,pageNum,'M')
-
-
 _cache_ofprsW,b_c={},{ord(c):None for c in ' \xa0'}
 def prsW(page,src,pageNum):
     global  _cache_ofprsW;
@@ -139,6 +115,4 @@ def prsW(page,src,pageNum):
     #for log:  #nm=f'{NNN}{"W"}01 {p+1:04}_{els:10}#{iii:^3}#{Adr:^42}_{nf:^50}.pdf' #
     adr=f'{adr:^42}';src=f'{src:^50}';els=f'{els:10}';uuu=f'{uuu:^3}'
     return (_cache_ofprsW:=CluesOfPage('W',els,uuu,adr,src,pageNum,realuuu if realuuu!=uuu else ''))
-
-
 """
