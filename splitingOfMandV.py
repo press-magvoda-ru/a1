@@ -417,12 +417,12 @@ def buildDSmakingCake(WW, MM, ofld):
         for proc in procs:
             proc.join()
     #makingMekOnes()
-    pprint.pprint({k: {'p': (len(v['p']), v['p']), 'S': dict(v['S'])}for k, v in MbyW.items()}, width=99999999,stream=open(join(ofld, 'MbyW'), 'w'))
+    #pprint.pprint({k: {'p': (len(v['p']), v['p']), 'S': dict(v['S'])}for k, v in MbyW.items()}, width=99999999,stream=open(join(ofld, 'MbyW'), 'w'))
     print(timing.log('4_1', ":MbyW"))
-    pprint.pprint(WbyM, width=99999999, stream=open(join(ofld, 'WbyM'), 'w'))
+    #pprint.pprint(WbyM, width=99999999, stream=open(join(ofld, 'WbyM'), 'w'))
     print(timing.log('4_2', ":WbyM"))
     print('bdB:')
-    pprint.pprint({k: (len(v['l']), v) for k, v in bdB.items() if len(v['l']) > 1}, stream=open(join(ofld, 'bdB'), 'w'))
+    #pprint.pprint({k: (len(v['l']), v) for k, v in bdB.items() if len(v['l']) > 1}, stream=open(join(ofld, 'bdB'), 'w'))
     print(timing.log('4_3', ":bdB"))
     def MKadrlist():
         adrlist=[]
