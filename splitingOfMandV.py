@@ -201,7 +201,7 @@ def main(root, rout=None):
 W, M, = None, None, 
 WbyM, MbyW = {}, {}  #WbyM is  { HnW:{HnM:{номерв(HnM):номерв(HnW)}}} ...
 def WM_mergeFromMultiPagePdf(srcW, srcM, outfld):
-    return 
+    #return 
     global W, M  # , rname
     if de_ug:
         global rname
