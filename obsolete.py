@@ -12,7 +12,22 @@
     #add2Hn(lfiles := sorted(os.popen(f'dir {src}/s/b|wsl grep -v Сопро|wsl grep pdf').read().splitlines(), key=weightWT, reverse=True))
 
 
-
+def FROMbuildWowDataStructureTMFROM(WW, MM, ofld):
+    import pprint,timing #FROM line for good hair and silk
+    from itertools import chain #FROM line ...
+    def mkAllByAdrs():
+        AllByAdrs = []
+        for k, v in chain(WW.items(), MM.items()):
+            AllByAdrs.append(v)  # или тут   # собственно здесь нужное отображение втулить из W|M строк адресса в "норм"
+        def simpleAdr(v):
+            return v.adr.replace('корп.', '%').replace(',кв.', ' ').replace(',д.', ' ')\
+                .replace(',д.', ' ').replace('.', ' ').split(' ', 1)[-1].replace(',', ' ').strip()
+        AllByAdrs.sort(key=simpleAdr)
+        print(timing.log('3.-1builded', ":AllByAdrs:"))
+        print('AllByAdrs:')
+        pprint.pprint(AllByAdrs, stream=(ou := open('AllByAdrs.dict', 'w')))
+        ou.close()
+        print(timing.log('3.-1', ":AllByAdrs"))
 
 #from def buildWowDataStructureTM(WW, MM, ofld):
 def loc_temp():

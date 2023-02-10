@@ -8,6 +8,7 @@ from os import sep
 Pg = namedtuple('Pg', 'pN Hn u els pa sq adr')
 rname = {}
 def DictFromFile(path):
+    """TODO import ast;ast.literal_eval"""
     return eval(open(path).read())  # читаем словарь - куда деваться
 def name2str(fVAReqVALUE):return fVAReqVALUE.split('=', 1)[0] # name2str(f'{var=}')
 @lru_cache(999)

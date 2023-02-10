@@ -55,6 +55,7 @@ def mainUI(in_srcM,in_srcW,in_fld):
             srcM,srcW,fld=self.b_srcM.text(),self.b_srcW.text(),self.b_fld.text()
             mkmk(fld)
             print(srcM,srcW,fld)
+            #HERE use SAGEread for 
             if not de_ug:
                 M_data_spliting(srcM, fld) # если чек т.е есть mTotB был то воспользоваться УЖОЙным M_
                 W_data_spliting(srcW, fld)
@@ -69,9 +70,12 @@ def mainUI(in_srcM,in_srcW,in_fld):
     myWindow.show()
     app.exec()
     return ['','','']
-inN, de_ug =os.cpu_count()+1, 0  #+1 #+1
+#+1 or unk# +1 for de_ug purpose:
+inN, de_ug =os.cpu_count()+1, 0  +1 
 Nparts = namedtuple('Nparts', 'sum lst index')
-Wshort = namedtuple('Wshort', 'weight Hn wm w')
+Wshort = namedtuple('Wshort', 'weight Hn wm w') # -замена семантики
+# было(wm-список парных;w-список водных_только)? - стало(w cписок [w,m*];
+#  wm-развёрнутый(раскрытый) список  собранный из участков 1 длины [w,0] либо участки из мек файла ([0,m]*,[w,m],[0,m]*)
 Mfrom, Wfrom, mainpid = {}, {}, os.getpid()
 def dirend(pathofdir): return join(pathofdir, '')
 def LinesOfFileName(pathofFile): return open(pathofFile).read().splitlines()
@@ -87,11 +91,9 @@ def weightMek(a):
 @lru_cache(maxsize=256)
 def weightWT(a): return fitz.open(a).page_count
 Mpages2time = {n: (0.004+0.005/2000*n)*n for n in range(9999)}# ... из предположения что удвоение учетверяет ( хотя по факту утраивает)\n# словарь/список (пока нет) с аппроксимацией - число_страниц_файла->время_на_файл :
-
 class entityByindex():  
     def __getitem__(self,n):return n
 Wpages2time=entityByindex() #не λ ибо нужно[]; # lambda n:n # (0.004+0.006/2000*n)*n for n in range(9999)}
-
 def SumMap(wf, l): return sum(map(wf, l))
 def toNparts(elems:list, nparts:int, pages2weight, pages):
     """Разбивка elems на nparts  почти равных по sum(pages2weight[pages(e)] for e in rez[j].lst) для каждой из частей j"""  
@@ -206,8 +208,8 @@ def WM_mergeFromMultiPagePdf(srcW, srcM, outfld):
     if de_ug:
         global rname
         rname=DictFromFile(join(root,'rname'))
-    buildWowDataStructureTM(W := DictFromFile(join(srcW, 'wTotB')),
-                            M := DictFromFile(join(srcM, 'mTotB')), outfld)
+    buildDSmakingCake(  W := DictFromFile(join(srcW, 'wTotB')),
+                        M := DictFromFile(join(srcM, 'mTotB')), outfld)
 pdfnum = 0
 def savepdf2(doc, name):
     global pdfnum
@@ -234,16 +236,19 @@ def inSubmergeW(prt, unk, rname):
           f' '.join(f'{f.weight}'for f in prt.lst), end=' ENDWW\n')
     for e in prt.lst:  # e is namedtuple('Wshort', 'weight Hn wm w')
         sz = (inp := fitz.open(rname[e.Hn])).page_count
-        out, out1 = fitz.open(), fitz.open()
-        for x, y in e.wm:
-            fromTo(inp, x.pN, out)
-            if y.Hn not in Mfrom:
-                Mfrom[y.Hn] = fitz.open(rname[y.Hn])
-            fromTo(Mfrom[y.Hn], y.pN, out)
+        out= fitz.open()
+        for x,y in e.wm:
+            if not x:
+                out.new_page()
+            else:
+                fromTo(inp, x.pN, out)
+            if not y:
+                out.new_page()
+            else:
+                if y.Hn not in Mfrom:
+                    Mfrom[y.Hn] = fitz.open(rname[y.Hn])
+                fromTo(Mfrom[y.Hn], y.pN, out)
         savepdfW(out, e.Hn, unk, sz)
-        for x in e.w:
-            fromTo(inp, x.pN, out1)
-        savepdfW(out1, e.Hn, unk, sz, 1)
     print(timing.log(f'{" ":<7}{pid:>5}', f'{pid:05}'), flush=True)
 def inSubMekOnes(unk, kMv, i):
     t = 0
@@ -254,93 +259,137 @@ def inSubMekOnes(unk, kMv, i):
             print(f'MekOnes prt:{i},counter {t}')
             savepdfM(z, f"{i:02}_{basename(v).split('.')[0]}", unk, 1)
         t += 1
-def buildWowDataStructureTM(WW, MM, ofld):
+def buildDSmakingCake(WW, MM, ofld):
     os.chdir(ofld)  # на усях слу
     print(timing.log('3.-2', "buildWowDataStructureTM:"))
-    def mkAllByAdrs():
-        AllByAdrs = []
-        for k, v in chain(WW.items(), MM.items()):
-            AllByAdrs.append(v)  # или тут   # собственно здесь нужное отображение втулить из W|M строк адресса в "норм"
-        def simpleAdr(v):
-            return v.adr.replace('корп.', '%').replace(',кв.', ' ').replace(',д.', ' ')\
-                .replace(',д.', ' ').replace('.', ' ').split(' ', 1)[-1].replace(',', ' ').strip()
-        AllByAdrs.sort(key=simpleAdr)
-        print(timing.log('3.-1builded', ":AllByAdrs:"))
-        print('AllByAdrs:')
-        pprint.pprint(AllByAdrs, stream=(ou := open('AllByAdrs.dict', 'w')))
-        ou.close()
-        print(timing.log('3.-1', ":AllByAdrs"))
     # привет 202№!  тахионы ушли в путь
-    bdB =defaultdict(dict)
-    for k, v in WW.items():
-        if v.els not in bdB:
-            bdB[v.els] = {'c': 0, 'w': 0, 'm': 0, 'wm': 0, 'l': []}
-        cur = bdB[v.els]
-        cur['c'] += 1
-        cur['w'] += 1
-        cur['l'].append([cur['c'], 1, v])
-    for k, v in MM.items():
-        if v.els not in bdB:
-            bdB[v.els] = {'c': 0, 'w': 0, 'm': 0, 'wm': 0, 'l': []}
-        cur = bdB[v.els]
-        cur['c'] += 1
-        if (not v.els):
-            cur['m'] += 1
-            cur['l'].append([cur['c'], 2, v])
-            continue
-        for e in cur['l']:
-            if e[1] == 1 and e[2].u == v.u:  # логика парности, можно так же  игнорируя u  сличать sq
-                cur['w'] -= 1
-                cur['wm'] += 1
-                e[1] = 3
-                e.append(v)
-                break
-        else:
-            cur['m'] += 1
-            cur['l'].append([cur['c'], 2, v])
-    # сборка парных в  wm=X w=1 m=1 # таковых вроде всего 293 по ноябрю можно и счётчик тут для
-    for k, v in bdB.items():
-        if (cur := v)['w'] == 1 and cur['m'] == 1:
-            for e in cur['l']:
-                if e[1] == 1:   # "очевидно" непарный M в конце. при пакетном все W затем все M
-                    e[1] = 3;e.append(cur['l'].pop()[-1]);cur['w'] -= 1;cur['m'] -= 1;cur['wm']+1;break
-    # TODO? here on bdB сопоставление по адресам (по первости только среди безelsных)
-    # ---
+    class sameELS():
+        def __init__(self):
+            self.wl=list()
+            self.ml=list()
+            self.pairs=list()
+            #w,m,wm -разбивка по видам в количествах; 
+    class posOfVinLwhat():
+        def __init__(self,pos=0,typeL='_'):
+            self.pos=pos
+            self.t=typeL #'wwm'.find(typeL)
+    def Harvest(WW,MM):
+        byEls=defaultdict(sameELS)
+        for k, v in WW.items():
+            cur = byEls[v.els]
+            cur.wl += [v]
+        for k, v in MM.items():
+            #if v.els not in byEls: byEls[v.els] = {'c': 0, 'w': 0, 'm': 0, 'wm': 0, 'l': []}
+            cur = byEls[v.els]
+            if (not v.els):
+                cur.ml += [v]
+                continue
+            for i,e in enumerate(cur.wl): # единичное поэтому без lst =cur.wl.copy()
+                if e.u == v.u: # пока инициалов достаточно 
+                    cur.pairs += [[cur.wl.pop(i),v]] 
+                    break
+            else:
+                cur.ml += [v]
+        for k, v in byEls.items():
+            if not k:
+                continue
+            cur=v
+            while cur.wl and cur.ml:
+                #в тупую:
+                cur.pairs +=[[cur.wl.pop(0),cur.ml.pop(0)]] #  не оптимально ибо с головы - надежда на реализацию "вирт динамического " массива которые в питоне списком зовётся
+        #make v2posInL great again:
+        v2posInl=defaultdict()#posOfVinLwhat)
+        for k,cur in byEls.items(): #потом(очень потом)- слоты и индексы wl 0 wm-pairs 1  ml 2 
+            for i,v in enumerate(cur.wl,0):
+                v2posInl[v]=posOfVinLwhat(i,'w')
+            for i,v in enumerate(cur.ml,0):
+                v2posInl[v]=posOfVinLwhat(i,'m')
+            for i,v in enumerate(cur.pairs,0):
+                v2posInl[v[0]]=posOfVinLwhat(i,'wm')
+                v2posInl[v[1]]=posOfVinLwhat(i,'wm')
+        return byEls,v2posInl
+    bdB,v2posInl, = Harvest(WW,MM)
+
     print(timing.log('3', "Построение словаря елс'ок с парнованием ежель чё")) # сборка адрессного стола чиста ради прикидки чё как
     for k, v in rname.items():
         if k[0] == 'M':
             Mfrom[k] = fitz.open(v)
-            MbyW[k] = {'p': set(range(Mfrom[k].page_count)),
-                       'S': defaultdict(int), }
-        if k[0] == 'W':
-            Wfrom[k] = fitz.open(v)
+            MbyW[k] = {'Sz':Mfrom[k].page_count,'WMed':set(),'p': set(range(Mfrom[k].page_count)),'S': defaultdict(int), }
+        #if k[0] == 'W':            Wfrom[k] = fitz.open(v)
     os.mkdir(unk := join(ofld, "WMpdfs"))
     os.system(f'start "Квитанции с водой" "{unk}"')
     # перегрупировка пар из bdB в Wlst[]
+    #словарь[файлов] -> валидных страниц МЭК список их 'all' и их "парных"-зацепленных 'wmz' - из него выставки в выходной:
+    def makeMekAmbit(MM):
+        AmbitByHn=dict()
+        for v in MM.values():
+            if not v.Hn in AmbitByHn:
+                length=weightWT(rname[v.Hn])
+                AmbitByHn[v.Hn]={'all':defaultdict(int),'wmz':[-1,length]}# если слева -1 то с префиксом; полуоткрытый интервал [-1,len)
+            AmbitByHn[v.Hn]['all'][v.pN]=v
+        #for k in AmbitByHn: AmbitByHn[k]['all'].sort(key=lambda x:x.pN)
+        return AmbitByHn
+    MekAmbit=makeMekAmbit(MM)
+    #Wshort = namedtuple('Wshort', 'weight Hn wm w') from Head 
     Wlst, usedWnames = [], set()
+    # достройка карты с прициплением непрививязанных МЭК
     for k, v in WW.items():
         if (vHn := v.Hn) not in usedWnames:
             usedWnames.add(vHn)
             Wlst.append(Wshort([0], vHn, [], []))
             z = WbyM[vHn] = {'c': 0, 'b': 0, 'S': defaultdict(int), }
-        ou = Wlst[-1]
+        ou = Wlst[-1]  # ибо квитанции воды идут подряд пофайлово
         (cur := bdB[v.els])
-        if cur['wm'] and cur['l'][0][1] == 3:
-            cur['wm'] -= 1
-            x, y = cur['l'].pop(0)[-2:]
-            # тут доп  можно передавать причину матчинга из ~~ [0]
-            ou.wm.append([x, y])
-            z['S'][(yHn := y.Hn)] += 1
-            MbyW[yHn]['S'][x.Hn] += 1
-            MbyW[yHn]['p'].remove(y.pN)
+        if (pos:=v2posInl[v]).t=='wm': #in pairs    
+            www, mmm = cur.pairs[pos.pos]
+            ou.w.append([www, mmm]) 
+            z['S'][(yHn := mmm.Hn)] += 1
+            MbyW[yHn]['S'][www.Hn] += 1
+            MbyW[yHn]['p'].remove(mmm.pN)
         else:
-            x = (tt := cur['l'].pop(0))[-1]
-            ou.w.append(x)
+            try:
+                
+                www = cur.wl.pop(0)
+            except Exception as e:
+                print(f'{pos=}')
+                raise e
+
+            ou.w.append([www,0]) 
             z['b'] += 1
-            cur['l'].append(tt)  # kekeke for [num,1,w]
         z['c'] += 1
+    #второй проход с составлением окончательных карт-описей выходных файлов двухсторон:
+    #WTAmbit=dict()
+    for ou in Wlst:
+        ou.w.sort(key=lambda v:v[0].pN) # ну а вдруг водные чехарда
+        #достройка wmz
+        for el in ou.w:
+            if el[1]:
+                curMekV=el[1]
+                MekAmbit[curMekV.Hn]['wmz'].append(curMekV.pN)
+    for k,mk in MekAmbit.items():
+        mk['wmz'].sort()
+    #инвариант незацепленности MekAmbit[Hn(pathМЭКfile)]['wmz'].__len__()==2
+    for ou in Wlst:
+        for el in ou.w:
+            if not el[1]:
+                ou.wm.append(el)
+                continue
+            curMek=MekAmbit[el[1].Hn]
+            cur_all,cur_wmz=curMek['all'],curMek['wmz']
+            PosInWmz=cur_wmz.index(el[1].pN)
+            if cur_wmz[PosInWmz-1]<0: #случай первого в файле == PozInWmz==1
+                for i in range(el[1].pN):
+                    if(v:=cur_all[i]):
+                        ou.wm.append([0,v])
+            ou.wm.append(el)
+            RightEdge=cur_wmz[PosInWmz+1]
+            i=el[1].pN+1
+            while i<RightEdge:
+                if(v:=cur_all[i]):
+                    ou.wm.append([0,v])
+                i+=1
     for e in Wlst:
-        e.weight[0] = 2*len(e.wm)+len(e.w)  # чисто просто ага  # не факт?!(см .sum :)) что поля в порядке имен типа :0
+        e.weight[0] =len(e.wm)  
     procs, chunks = [], [Nparts([0], [], i+1) for i in range(inN)] 
     for e in sorted(Wlst,key=lambda e: e.weight[0], reverse=True):  # e is namedtuple('Wshort', 'weight Hn wm w')
         (v := min(chunks)).sum[0] += e.weight[0]
@@ -350,12 +399,13 @@ def buildWowDataStructureTM(WW, MM, ofld):
         procs.append(proc)
         proc.start()
     for proc in procs:
-        proc.join()
+        proc.join() 
+    
     print(timing.log('totalW_data_merging', "ПарамПамПам"))
     print(f">WWW   end:{datetime.now()}")
    #TODO случай чисто нечётных мэк файлов - вставка 0-чётных страниц вместо 
    #росписи несопоставленных(часть размажется по зацепленным пачкам воды - логика ХЗ1) 
-    def HEREOTHER1():
+    def makingMekOnes():
         os.mkdir(unk := join(ofld, 'MekOnes'))
         procs, = [],
         rnr = {k: (v, list(MbyW[k]['p']))
@@ -366,7 +416,7 @@ def buildWowDataStructureTM(WW, MM, ofld):
             proc.start()
         for proc in procs:
             proc.join()
-    HEREOTHER1()
+    #makingMekOnes()
     pprint.pprint({k: {'p': (len(v['p']), v['p']), 'S': dict(v['S'])}for k, v in MbyW.items()}, width=99999999,stream=open(join(ofld, 'MbyW'), 'w'))
     print(timing.log('4_1', ":MbyW"))
     pprint.pprint(WbyM, width=99999999, stream=open(join(ofld, 'WbyM'), 'w'))
@@ -382,12 +432,11 @@ def buildWowDataStructureTM(WW, MM, ofld):
         adrlist.sort(key=lambda a:a.adr)
         pprint.pprint(adrlist, stream=open(join(ofld, 'adrlist'), 'w'))
     print(timing.log('4_E', "Отсохронялись"))
-
-
 import obsolete
 if __name__ == '__main__':
     mp.freeze_support()
     root = rezname.getArgOr(1, dirname(dirname(__file__)), 'Dir')
+    SAGAread=rezname.getArgOr(2, ['doParseMEK','doParseWT','doParing']) #for real """TODO import ast;ast.literal_eval"""
     print(root)
     print(f':\t Начало', timing.log('', f'{timing.pred-timing.base}'))
     main(join(root, ''))
