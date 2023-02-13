@@ -36,7 +36,7 @@ def getAllbundles(b):
     return r
 
 def getS(path):
-    (allbundle:=getAllbundles(lst(join(path,'WMpdfs'))))
+    (allbundle:=getAllbundles(lst(path)))
     import pandas as pd
     df=pd.DataFrame(allbundle)
     print(f'all is {(z:=bundle(*df.sum(1)))}')
@@ -45,7 +45,7 @@ def getS(path):
 
 if __name__=='__main__':
     path=sys.argv[-1] if sys.argv[1:] else '.'
-    getS(path)
+    getS(join(path,'WMpdfs'))
 
 
 
