@@ -5,9 +5,11 @@ from functools import lru_cache
 from itertools import chain
 from os.path import basename, dirname, join
 import fitz, rezname, timing
-from reparseWxMx import Hn, Pg, add2Hn, DictFromFile, name2str, prsM, prsW, rname
+from reparseWxMx import Hn, Pg, bundle, add2Hn, DictFromFile, name2str, prsM, prsW, rname
 import inspect; __LINE__ = inspect.currentframe()
 print(__LINE__.f_lineno);print(__LINE__.f_lineno)
+#+1 or unk# +1 for de_ug purpose:
+inN, de_ug =os.cpu_count()+1, 0  #+1 
 #root=''
 def mkmk(fld): # утилита для mainUI
     if not os.path.isdir(fld):
@@ -70,26 +72,24 @@ def mainUI(in_srcM,in_srcW,in_fld):
     myWindow.show()
     app.exec()
     return ['','','']
-#+1 or unk# +1 for de_ug purpose:
-inN, de_ug =os.cpu_count()+1, 0  +1 
 Nparts = namedtuple('Nparts', 'sum lst index')
 Wshort = namedtuple('Wshort', 'weight Hn wm w') # -замена семантики
 # было(wm-список парных;w-список водных_только)? - стало(w cписок [w,m*];
 #  wm-развёрнутый(раскрытый) список  собранный из участков 1 длины [w,0] либо участки из мек файла ([0,m]*,[w,m],[0,m]*)
-Mfrom, Wfrom, mainpid = {}, {}, os.getpid()
+WMdocByHn, mainpid = {}, os.getpid()
 def dirend(pathofdir): return join(pathofdir, '')
 def LinesOfFileName(pathofFile): return open(pathofFile).read().splitlines()
 @lru_cache(maxsize=999)
 def weightMek(a):
     try:
-        if ((rl := fitz.open(a).page_count))==(nm := int(basename(a).split('-')[4])): return nm
+        if (rl := pagesInPDF(a))==(nm := int(basename(a).split('-')[4])): return nm
     except:
         print(f'!!!Файл:{a} - Не форматное имя  +{rl} к различению общего числа (страниц VS квитанций')
         return 0         #TODO write in table bads of mek-file-pdf with massage
     print(f'!!!Файл:{a} из имени: {nm} по факту: {rl}  имя не != содержимому')
     return rl
 @lru_cache(maxsize=256)
-def weightWT(a): return fitz.open(a).page_count
+def pagesInPDF(a): return fitz.open(a).page_count
 Mpages2time = {n: (0.004+0.005/2000*n)*n for n in range(9999)}# ... из предположения что удвоение учетверяет ( хотя по факту утраивает)\n# словарь/список (пока нет) с аппроксимацией - число_страниц_файла->время_на_файл :
 class entityByindex():  
     def __getitem__(self,n):return n
@@ -152,7 +152,7 @@ def M_data_spliting(src, of):
     sys.stdout = stdout
     numOfGoodPages=open('mTotB','r').readlines().__len__() -2 #{} проще из размера(max(keys)) словаря
     def f(lfiles):
-        return sum(weightWT(f) for f in lfiles)
+        return sum(pagesInPDF(f) for f in lfiles)
     return {'of':of,'kvits':numOfGoodPages,'pages':f(lfiles)} # namedtuple in next season :)
 def inSubProcW(Tp, base, prt):
     i, pid = base, os.getpid()
@@ -161,7 +161,7 @@ def inSubProcW(Tp, base, prt):
     if (prt.index == 1):
         pagestxt.write('{')
     print(f'{prt.index=:^3} weght:{prt.sum[0]:^17.3f} {pid=:^7}len={len(prt.lst):>4} ',
-          f' '.join(f'{weightWT(f)}'for f in prt.lst), end=' END\n')
+          f' '.join(f'{pagesInPDF(f)}'for f in prt.lst), end=' END\n')
     for inp in (fitz.open(f) for f in prt.lst):
         Name = Hn(inp.name,Tp)
         for p in range(szInp := inp.page_count):
@@ -177,13 +177,13 @@ def W_data_spliting(src, of):
         (of := of+f'\\_{Tp}{rezname.rezname()}')+'.txt', 'w')
     print(f">{Tp} start:{datetime.now()}")
     print(timing.log(f'mainpid', f':{mainpid=:05} {inN=:^20}'), flush=True)
-    add2Hn(lfiles := sorted(lstInWithExtention(src), key=weightWT, reverse=True),Tp)
-    base, procs, chunks, = 0, [], toNparts(lfiles, inN, Wpages2time, weightWT)
+    add2Hn(lfiles := sorted(lstInWithExtention(src), key=pagesInPDF, reverse=True),Tp)
+    base, procs, chunks, = 0, [], toNparts(lfiles, inN, Wpages2time, pagesInPDF)
     for chunk in chunks:
         proc = mp.Process(target=inSubProcW, args=(Tp, base, chunk))
         procs.append(proc)
         proc.start()
-        base += SumMap(weightWT, chunk.lst)
+        base += SumMap(pagesInPDF, chunk.lst)
     for proc in procs:
         proc.join()
     print(timing.log('totalW_data_spliting', of))
@@ -216,27 +216,22 @@ def savepdf2(doc, name):
     doc.save(name, garbage=2, deflate=True)
     pdfnum = pdfnum+1
     print(timing.log(f'№{pdfnum:>03}', name))
-def savepdfW(doc, name, fld, sz, sbj=2):
+def savepdfW(doc, name, fld, cs):#counters[m,w,wm]
     if (p := doc.page_count):
-        p //= sbj
-        savepdf2(
-            doc, join(fld, z := f'{name[2:]:<15}({sz:05}){sbj:^3}{p:05}.pdf'))
-def savepdfM(doc, name, fld, sbj=''):
-    if (p := doc.page_count):
-        savepdf2(doc, join(fld, z := f'{name:0}{sbj:^3}{p:05}.pdf'))
- 
+        kvt=sum(cs)+cs[-1]; tot=2*sum(cs); sps=tot-kvt
+        savepdf2(doc, join(fld, z := f'{name[2:]:<17}${bundle(*cs,kvt,sps,tot)}.pdf'))
 def fromTo(src, p, dst):
     dst.insert_pdf(src, from_page=p, to_page=p, links=0, annots=0, final=False)
 def inSubmergeW(prt, unk, rname):
     pid = os.getpid()
     print(f'>>WW from {prt.index} {os.getpid()} {os.getcwd()}')
-    Mfrom = {}
+    WMdocByHn = {}
     # pagestxt = open(f'W{prt.index:>03}', 'w')  # {pid:>6}
     print(f'{prt.index=:^3} weght:{prt.sum[0]:^17.3f} {pid=:^7}len={len(prt.lst):>4} ',
           f' '.join(f'{f.weight}'for f in prt.lst), end=' ENDWW\n')
     for e in prt.lst:  # e is namedtuple('Wshort', 'weight Hn wm w')
-        sz = (inp := fitz.open(rname[e.Hn])).page_count
-        out= fitz.open()
+        counters,inp =[0,0,0],fitz.open(rname[e.Hn])
+        out=fitz.open()
         for x,y in e.wm:
             if not x:
                 out.new_page()
@@ -245,60 +240,49 @@ def inSubmergeW(prt, unk, rname):
             if not y:
                 out.new_page()
             else:
-                if y.Hn not in Mfrom:
-                    Mfrom[y.Hn] = fitz.open(rname[y.Hn])
-                fromTo(Mfrom[y.Hn], y.pN, out)
-        savepdfW(out, e.Hn, unk, sz)
+                if y.Hn not in WMdocByHn:
+                    WMdocByHn[y.Hn] = fitz.open(rname[y.Hn])
+                fromTo(WMdocByHn[y.Hn], y.pN, out)
+            counters[2*int(bool(x))+int(bool(y)-1)]+=1
+        savepdfW(out, e.Hn, unk, counters)
     print(timing.log(f'{" ":<7}{pid:>5}', f'{pid:05}'), flush=True)
-def inSubMekOnes(unk, kMv, i):
-    t = 0
-    for k,(v,l) in kMv.items():
-        if t % inN == i:
-            z = fitz.open(v)
-            z.select(l)  # lol set is not seq for pymupdf
-            print(f'MekOnes prt:{i},counter {t}')
-            savepdfM(z, f"{i:02}_{basename(v).split('.')[0]}", unk, 1)
-        t += 1
+def inSubMekOnes(unk, IslandMek_partI, i):
+    for Hn,path in IslandMek_partI:
+        out = fitz.open()
+        for pN in range(sz:=(inp:=fitz.open(path)).page_count):
+            out.new_page()
+            fromTo(inp,pN,out)
+        print(f'MekOnes prt:{i}:')
+        savepdfW(out, Hn, unk, [sz,0,0])
 def buildDSmakingCake(WW, MM, ofld):
     os.chdir(ofld)  # на усях слу
     print(timing.log('3.-2', "buildWowDataStructureTM:"))
     # привет 202№!  тахионы ушли в путь
     class sameELS():
         def __init__(self):
-            self.wl=list()
-            self.ml=list()
-            self.pairs=list()
-            #w,m,wm -разбивка по видам в количествах; 
+            self.wl,self.ml,self.pairs=list(),list(),list()
     class posOfVinLwhat():
         def __init__(self,pos=0,typeL='_'):
-            self.pos=pos
-            self.t=typeL #'wwm'.find(typeL)
+            self.pos,self.t=pos,typeL #'wwm'.find(typeL)
     def Harvest(WW,MM):
         byEls=defaultdict(sameELS)
         for k, v in WW.items():
-            cur = byEls[v.els]
-            cur.wl += [v]
+            byEls[v.els].wl+=[v]
         for k, v in MM.items():
-            #if v.els not in byEls: byEls[v.els] = {'c': 0, 'w': 0, 'm': 0, 'wm': 0, 'l': []}
             cur = byEls[v.els]
-            if (not v.els):
-                cur.ml += [v]
-                continue
+            if (not v.els): cur.ml += [v]; continue
             for i,e in enumerate(cur.wl): # единичное поэтому без lst =cur.wl.copy()
                 if e.u == v.u: # пока инициалов достаточно 
                     cur.pairs += [[cur.wl.pop(i),v]] 
                     break
             else:
                 cur.ml += [v]
-        for k, v in byEls.items():
+        for k, cur in byEls.items():
             if not k:
                 continue
-            cur=v
             while cur.wl and cur.ml:
-                #в тупую:
-                cur.pairs +=[[cur.wl.pop(0),cur.ml.pop(0)]] #  не оптимально ибо с головы - надежда на реализацию "вирт динамического " массива которые в питоне списком зовётся
-        #make v2posInL great again:
-        v2posInl=defaultdict()#posOfVinLwhat)
+                cur.pairs +=[[cur.wl.pop(0),cur.ml.pop(0)]] #  не оптимально ибо с головы 
+        v2posInl=defaultdict()#posOfVinLwhat)#make v2posInL great again:
         for k,cur in byEls.items(): #потом(очень потом)- слоты и индексы wl 0 wm-pairs 1  ml 2 
             for i,v in enumerate(cur.wl,0):
                 v2posInl[v]=posOfVinLwhat(i,'w')
@@ -310,63 +294,49 @@ def buildDSmakingCake(WW, MM, ofld):
         return byEls,v2posInl
     bdB,v2posInl, = Harvest(WW,MM)
 
-    print(timing.log('3', "Построение словаря елс'ок с парнованием ежель чё")) # сборка адрессного стола чиста ради прикидки чё как
-    for k, v in rname.items():
-        if k[0] == 'M':
-            Mfrom[k] = fitz.open(v)
-            MbyW[k] = {'Sz':Mfrom[k].page_count,'WMed':set(),'p': set(range(Mfrom[k].page_count)),'S': defaultdict(int), }
-        #if k[0] == 'W':            Wfrom[k] = fitz.open(v)
-    os.mkdir(unk := join(ofld, "WMpdfs"))
+    print(timing.log('3', "Построение словаря елс'ок с парнованием ежель чё"))
+    for Hn, fullpath in rname.items():
+        WMdocByHn[Hn] = fitz.open(fullpath)
+        if Hn[0] == 'M':
+            MbyW[Hn] = {'Sz':WMdocByHn[Hn].page_count,'WMed':set(),'p': set(range(WMdocByHn[Hn].page_count)),'S': defaultdict(int), }
+    os.mkdir(unk:= join(ofld, "WMpdfs"))
     os.system(f'start "Квитанции с водой" "{unk}"')
-    # перегрупировка пар из bdB в Wlst[]
     #словарь[файлов] -> валидных страниц МЭК список их 'all' и их "парных"-зацепленных 'wmz' - из него выставки в выходной:
     def makeMekAmbit(MM):
         AmbitByHn=dict()
         for v in MM.values():
             if not v.Hn in AmbitByHn:
-                length=weightWT(rname[v.Hn])
-                AmbitByHn[v.Hn]={'all':defaultdict(int),'wmz':[-1,length]}# если слева -1 то с префиксом; полуоткрытый интервал [-1,len)
+                AmbitByHn[v.Hn]={'all':defaultdict(int),'wmz':[-1,pagesInPDF(rname[v.Hn])]}# если слева -1 то с префиксом; полуоткрытый интервал [-1,len)
             AmbitByHn[v.Hn]['all'][v.pN]=v
-        #for k in AmbitByHn: AmbitByHn[k]['all'].sort(key=lambda x:x.pN)
         return AmbitByHn
     MekAmbit=makeMekAmbit(MM)
     #Wshort = namedtuple('Wshort', 'weight Hn wm w') from Head 
     Wlst, usedWnames = [], set()
     # достройка карты с прициплением непрививязанных МЭК
-    for k, v in WW.items():
-        if (vHn := v.Hn) not in usedWnames:
+    for Hn, fullpath in WW.items():
+        if (vHn := fullpath.Hn) not in usedWnames:
             usedWnames.add(vHn)
             Wlst.append(Wshort([0], vHn, [], []))
             z = WbyM[vHn] = {'c': 0, 'b': 0, 'S': defaultdict(int), }
         ou = Wlst[-1]  # ибо квитанции воды идут подряд пофайлово
-        (cur := bdB[v.els])
-        if (pos:=v2posInl[v]).t=='wm': #in pairs    
+        (cur := bdB[fullpath.els])
+        if (pos:=v2posInl[fullpath]).t=='wm': #in pairs    
             www, mmm = cur.pairs[pos.pos]
             ou.w.append([www, mmm]) 
             z['S'][(yHn := mmm.Hn)] += 1
             MbyW[yHn]['S'][www.Hn] += 1
             MbyW[yHn]['p'].remove(mmm.pN)
         else:
-            try:
-                
-                www = cur.wl.pop(0)
-            except Exception as e:
-                print(f'{pos=}')
-                raise e
-
-            ou.w.append([www,0]) 
+            ou.w.append([cur.wl.pop(0),0]) 
             z['b'] += 1
         z['c'] += 1
-    #второй проход с составлением окончательных карт-описей выходных файлов двухсторон:
-    #WTAmbit=dict()
     for ou in Wlst:
         ou.w.sort(key=lambda v:v[0].pN) # ну а вдруг водные чехарда
-        #достройка wmz
         for el in ou.w:
             if el[1]:
                 curMekV=el[1]
                 MekAmbit[curMekV.Hn]['wmz'].append(curMekV.pN)
-    for k,mk in MekAmbit.items():
+    for Hn,mk in MekAmbit.items():
         mk['wmz'].sort()
     #инвариант незацепленности MekAmbit[Hn(pathМЭКfile)]['wmz'].__len__()==2
     for ou in Wlst:
@@ -379,21 +349,20 @@ def buildDSmakingCake(WW, MM, ofld):
             PosInWmz=cur_wmz.index(el[1].pN)
             if cur_wmz[PosInWmz-1]<0: #случай первого в файле == PozInWmz==1
                 for i in range(el[1].pN):
-                    if(v:=cur_all[i]):
-                        ou.wm.append([0,v])
+                    if(fullpath:=cur_all[i]):
+                        ou.wm.append([0,fullpath])
             ou.wm.append(el)
             RightEdge=cur_wmz[PosInWmz+1]
             i=el[1].pN+1
             while i<RightEdge:
-                if(v:=cur_all[i]):
-                    ou.wm.append([0,v])
+                if(fullpath:=cur_all[i]):
+                    ou.wm.append([0,fullpath])
                 i+=1
-    for e in Wlst:
-        e.weight[0] =len(e.wm)  
+        ou.weight[0] =len(ou.wm)  
     procs, chunks = [], [Nparts([0], [], i+1) for i in range(inN)] 
     for e in sorted(Wlst,key=lambda e: e.weight[0], reverse=True):  # e is namedtuple('Wshort', 'weight Hn wm w')
-        (v := min(chunks)).sum[0] += e.weight[0]
-        v.lst.append(e)
+        (fullpath := min(chunks)).sum[0] += e.weight[0]
+        fullpath.lst.append(e)
     for chunk in chunks:
         proc = mp.Process(target=inSubmergeW, args=(chunk, unk, rname))
         procs.append(proc)
@@ -403,26 +372,26 @@ def buildDSmakingCake(WW, MM, ofld):
     
     print(timing.log('totalW_data_merging', "ПарамПамПам"))
     print(f">WWW   end:{datetime.now()}")
-   #TODO случай чисто нечётных мэк файлов - вставка 0-чётных страниц вместо 
-   #росписи несопоставленных(часть размажется по зацепленным пачкам воды - логика ХЗ1) 
-    def makingMekOnes():
-        os.mkdir(unk := join(ofld, 'MekOnes'))
-        procs, = [],
-        rnr = {k: (v, list(MbyW[k]['p']))
-            for k, v in rname.items() if k[0] == 'M' and MbyW[k]['p']}
+    def makingMekOnes(unk):
+        procs = []
+        IslandMek=[[Hn,path] for Hn,path in rname.items() if Hn[0] == 'M' and len(MekAmbit[Hn]['wmz'])==2]
+        print("Непривязанные МЭК-файлы(before_sort):",len(IslandMek))
+        pprint.pprint([z[0]for z in IslandMek],width=99999999)
+        IslandMek.sort(key=lambda Hn_path:pagesInPDF(Hn_path[1]),reverse=True)
+        print("Непривязанные МЭК-файлы( after_sort):",len(IslandMek))
+        pprint.pprint([z[0]for z in IslandMek],width=99999999)
         for i in range(inN):
-            proc = mp.Process(target=inSubMekOnes, args=(unk, rnr, i))
+            proc = mp.Process(target=inSubMekOnes, args=(unk, IslandMek[i::inN], i))
             procs.append(proc)
             proc.start()
         for proc in procs:
             proc.join()
-    #makingMekOnes()
-    #pprint.pprint({k: {'p': (len(v['p']), v['p']), 'S': dict(v['S'])}for k, v in MbyW.items()}, width=99999999,stream=open(join(ofld, 'MbyW'), 'w'))
+    makingMekOnes(unk)
+    pprint.pprint(MbyW, width=99999999, stream=open(join(ofld, 'MbyW'), 'w'))
     print(timing.log('4_1', ":MbyW"))
-    #pprint.pprint(WbyM, width=99999999, stream=open(join(ofld, 'WbyM'), 'w'))
+    pprint.pprint(WbyM, width=99999999, stream=open(join(ofld, 'WbyM'), 'w'))
     print(timing.log('4_2', ":WbyM"))
-    print('bdB:')
-    #pprint.pprint({k: (len(v['l']), v) for k, v in bdB.items() if len(v['l']) > 1}, stream=open(join(ofld, 'bdB'), 'w'))
+    pprint.pprint(bdB,width=99999999, stream=open(join(ofld, 'bdB'), 'w'))
     print(timing.log('4_3', ":bdB"))
     def MKadrlist():
         adrlist=[]
@@ -431,6 +400,9 @@ def buildDSmakingCake(WW, MM, ofld):
                 adrlist.append(e[-1])
         adrlist.sort(key=lambda a:a.adr)
         pprint.pprint(adrlist, stream=open(join(ofld, 'adrlist'), 'w'))
+    
+    from  debundle import getS
+    getS(unk)
     print(timing.log('4_E', "Отсохронялись"))
 import obsolete
 if __name__ == '__main__':

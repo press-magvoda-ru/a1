@@ -6,6 +6,7 @@ from os import sep
 # print('попячено из a1/splitingOfMandV.py  c дополнением лицевых и площади')
 # CluesOfPage('W',els,uuu,adr,src,pageNum,realuuu if realuuu!=uuu else ''))
 Pg = namedtuple('Pg', 'pN Hn u els pa sq adr')
+bundle = namedtuple('bundle','m w P kvt sps tot')
 rname = {}
 def DictFromFile(path):
     """TODO import ast;ast.literal_eval"""
