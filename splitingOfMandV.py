@@ -5,6 +5,7 @@ from functools import lru_cache
 from itertools import chain
 from os.path import basename, dirname, join
 import fitz, rezname, timing
+import os
 from reparseWxMx import Hn, Pg, bundle, add2Hn, DictFromFile, name2str, prsM, prsW, rname, makeEmptyPg, makeFakeNxtPg
 import inspect; __LINE__ = inspect.currentframe()
 print(__LINE__.f_lineno);print(__LINE__.f_lineno)
@@ -68,6 +69,7 @@ def mainUI(in_srcM,in_srcW,in_fld):
             else: # de_ug yap
                 rootTotS=r'C:\AAA\MWrez_2023-02-17__14-35-06' #r"C:\AAA\MWrez_2023-02-16__08-35-37" 
                 nm=WM_mergeFromMultiPagePdf(rootTotS, rootTotS, fld)# de_ug of doubling All
+            os.system(nm)
             sys.exit()
     app = QtWidgets.QApplication(sys.argv)
     myWindow = mn_Window()
