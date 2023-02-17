@@ -97,7 +97,7 @@ def makeXLS(path):
     wb = openpyxl.Workbook()
     wb.remove_sheet(wb.active)
     main(mnL, wb)
-    wb.save((nm:=f'{os.path.join(path.rezname.rezname())}.xlsx'))
+    wb.save((nm:=f'{os.path.join(path,rezname.rezname())}.xlsx'))
     #os.system(f'start "" "cmd /c {nm}"')
     return nm
 
