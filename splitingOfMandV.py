@@ -5,11 +5,11 @@ from functools import lru_cache
 from itertools import chain
 from os.path import basename, dirname, join
 import fitz, rezname, timing
-from reparseWxMx import Hn, Pg, bundle, add2Hn, DictFromFile, name2str, prsM, prsW, rname
+from reparseWxMx import Hn, Pg, bundle, add2Hn, DictFromFile, name2str, prsM, prsW, rname, makeEmptyPg, makeFakeNxtPg
 import inspect; __LINE__ = inspect.currentframe()
 print(__LINE__.f_lineno);print(__LINE__.f_lineno)
 #+1 or unk# +1 for de_ug purpose:
-inN, de_ug =os.cpu_count()+1, 0  #+1 
+inN, de_ug =os.cpu_count()+1, 0 +1 
 #root=''
 def mkmk(fld): # утилита для mainUI
     if not os.path.isdir(fld):
@@ -65,7 +65,8 @@ def mainUI(in_srcM,in_srcW,in_fld):
                     join(fld, name2str(f'{rname=}')), 'w'), width=333)  # nero are
                 WM_mergeFromMultiPagePdf(fld, fld, fld)
             else: # de_ug yap
-                WM_mergeFromMultiPagePdf(root, root, fld)# de_ug of doubling All
+                rootTotS=r'C:\AAA\MWrez_2023-02-17__14-35-06' #r"C:\AAA\MWrez_2023-02-16__08-35-37" 
+                WM_mergeFromMultiPagePdf(rootTotS, rootTotS, fld)# de_ug of doubling All
             sys.exit()
     app = QtWidgets.QApplication(sys.argv)
     myWindow = mn_Window()
@@ -73,7 +74,7 @@ def mainUI(in_srcM,in_srcW,in_fld):
     app.exec()
     return ['','','']
 Nparts = namedtuple('Nparts', 'sum lst index')
-Wshort = namedtuple('Wshort', 'weight Hn wm w') # -замена семантики
+Wshort = namedtuple('Wshort', 'weight Hn wm w cs') # -замена семантики
 # было(wm-список парных;w-список водных_только)? - стало(w cписок [w,m*];
 #  wm-развёрнутый(раскрытый) список  собранный из участков 1 длины [w,0] либо участки из мек файла ([0,m]*,[w,m],[0,m]*)
 WMdocByHn, mainpid = {}, os.getpid()
@@ -90,7 +91,8 @@ def weightMek(a):
     return rl
 @lru_cache(maxsize=256)
 def pagesInPDF(a): return fitz.open(a).page_count
-Mpages2time = {n: (0.004+0.005/2000*n)*n for n in range(9999)}# ... из предположения что удвоение учетверяет ( хотя по факту утраивает)\n# словарь/список (пока нет) с аппроксимацией - число_страниц_файла->время_на_файл :
+Mpages2time = {n: (0.004+0.005/2000*n)*n for n in range(9999)};""" ... из предположения что удвоение учетверяет ( хотя по факту утраивает)\
+    \n словарь/список (пока нет) с аппроксимацией - число_страниц_файла->время_на_файл :"""
 class entityByindex():  
     def __getitem__(self,n):return n
 Wpages2time=entityByindex() #не λ ибо нужно[]; # lambda n:n # (0.004+0.006/2000*n)*n for n in range(9999)}
@@ -207,53 +209,66 @@ def WM_mergeFromMultiPagePdf(srcW, srcM, outfld):
     global W, M  # , rname
     if de_ug:
         global rname
-        rname=DictFromFile(join(root,'rname'))
+        rname=DictFromFile(join(srcW or srcM,'rname'))#DictFromFile(join(root,'rname'))
     buildDSmakingCake(  W := DictFromFile(join(srcW, 'wTotB')),
                         M := DictFromFile(join(srcM, 'mTotB')), outfld)
 pdfnum = 0
-def savepdf2(doc, name):
-    global pdfnum
-    doc.save(name, garbage=2, deflate=True)
-    pdfnum = pdfnum+1
-    print(timing.log(f'№{pdfnum:>03}', name))
-def savepdfW(doc, name, fld, cs):#counters[m,w,wm]
+def bundlename(name,cs):#counters[m,w,wm]
+        kvt=sum(cs)+cs[-1]; tot=2*sum(cs);  sps=tot-kvt
+        return f'{name[2:]} ${str(bundle(*cs,kvt,sps,tot)).replace(" ","")}'
+def savepdfW(doc, name):
     if (p := doc.page_count):
-        kvt=sum(cs)+cs[-1]; tot=2*sum(cs); sps=tot-kvt
-        savepdf2(doc, join(fld, z := f'{name[2:]:<17}${bundle(*cs,kvt,sps,tot)}.pdf'))
-def fromTo(src, p, dst):
-    dst.insert_pdf(src, from_page=p, to_page=p, links=0, annots=0, final=False)
-def inSubmergeW(prt, unk, rname):
+        global pdfnum
+        doc.save(name, garbage=2, deflate=True)
+        pdfnum = pdfnum+1
+        print(timing.log(f'№{pdfnum:>03}', name))
+def fromTo(src,pN,oname,x,dst):
+    if(src):
+        dst.insert_pdf(src, from_page=x.pN, to_page=x.pN, links=0, annots=0, final=False)
+    else:
+        dst.new_page()
+    return f"Pg{tuple(makeCurPg(pN,oname,x))}"#.replace(' ','')
+def makeCurPg(pN,oname,v):
+    # as like in makeFakeNxtPg
+    t={v._fields[i]:v[i] for i,fld in enumerate(v)}
+    t['pN'],t['Hn']=pN,oname,
+    return Pg(*t.values())
+def inSubmergeW(prt, ofld, rname):
     pid = os.getpid()
     print(f'>>WW from {prt.index} {os.getpid()} {os.getcwd()}')
     WMdocByHn = {}
-    # pagestxt = open(f'W{prt.index:>03}', 'w')  # {pid:>6}
     print(f'{prt.index=:^3} weght:{prt.sum[0]:^17.3f} {pid=:^7}len={len(prt.lst):>4} ',
           f' '.join(f'{f.weight}'for f in prt.lst), end=' ENDWW\n')
-    for e in prt.lst:  # e is namedtuple('Wshort', 'weight Hn wm w')
-        counters,inp =[0,0,0],fitz.open(rname[e.Hn])
-        out=fitz.open()
+    ePg=makeEmptyPg()  
+    for e in prt.lst:  # e is namedtuple('Wshort', 'weight Hn wm w cs')
+        Hn=e.Hn;    
+        onamePdf=f'{join(ofld,Hn[2:])}.pdf'
+        onameBnd=f'{join(ofld,bundlename(Hn,e.cs))}.py'
+        pagestxt = open(onameBnd, 'w')
+        pN,inp =-1,fitz.open(rname[Hn]) #;counters=[0,0,0]
+        pagestxt.write('[\n');  out=fitz.open()
         for x,y in e.wm:
+            t=[]
             if not x:
-                out.new_page()
+                t.append(fromTo(0,pN:=pN+1,onamePdf,ePg,out))#x and inp,pN,onamePdf,x or ePg,out
             else:
-                fromTo(inp, x.pN, out)
+                t.append(fromTo(inp,pN:=pN+1,onamePdf,x,out))
             if not y:
-                out.new_page()
+                t.append(fromTo(0,pN:=pN+1,onamePdf,ePg,out))
             else:
-                if y.Hn not in WMdocByHn:
-                    WMdocByHn[y.Hn] = fitz.open(rname[y.Hn])
-                fromTo(WMdocByHn[y.Hn], y.pN, out)
-            counters[2*int(bool(x))+int(bool(y)-1)]+=1
-        savepdfW(out, e.Hn, unk, counters)
+                try:
+                    if y.Hn not in WMdocByHn:
+                        WMdocByHn[y.Hn] = fitz.open(rname[y.Hn])
+                except Exception as z:
+                    raise(z)
+                t.append(fromTo(WMdocByHn[y.Hn],pN:=pN+1,onamePdf,y,out))
+            #counters[2*int(bool(x))+int(bool(y)-1)]+=1
+            pagestxt.write('[')
+            print(*t,sep=',',end='],\n',file=pagestxt)#.write(f"{str(t).replace(' ','')},\n") #lol
+        savepdfW(out, onamePdf)
+        pagestxt.write(']')
     print(timing.log(f'{" ":<7}{pid:>5}', f'{pid:05}'), flush=True)
-def inSubMekOnes(unk, IslandMek_partI, i):
-    for Hn,path in IslandMek_partI:
-        out = fitz.open()
-        for pN in range(sz:=(inp:=fitz.open(path)).page_count):
-            out.new_page()
-            fromTo(inp,pN,out)
-        print(f'MekOnes prt:{i}:')
-        savepdfW(out, Hn, unk, [sz,0,0])
+
 def buildDSmakingCake(WW, MM, ofld):
     os.chdir(ofld)  # на усях слу
     print(timing.log('3.-2', "buildWowDataStructureTM:"))
@@ -306,28 +321,31 @@ def buildDSmakingCake(WW, MM, ofld):
         AmbitByHn=dict()
         for v in MM.values():
             if not v.Hn in AmbitByHn:
-                AmbitByHn[v.Hn]={'all':defaultdict(int),'wmz':[-1,pagesInPDF(rname[v.Hn])]}# если слева -1 то с префиксом; полуоткрытый интервал [-1,len)
+                AmbitByHn[v.Hn]={'all':defaultdict(Pg),'wmz':[-1,pagesInPDF(rname[v.Hn])]}# если слева -1 то с префиксом; полуоткрытый интервал [-1,len)
             AmbitByHn[v.Hn]['all'][v.pN]=v
         return AmbitByHn
     MekAmbit=makeMekAmbit(MM)
     #Wshort = namedtuple('Wshort', 'weight Hn wm w') from Head 
     Wlst, usedWnames = [], set()
     # достройка карты с прициплением непрививязанных МЭК
-    for Hn, fullpath in WW.items():
-        if (vHn := fullpath.Hn) not in usedWnames:
+    for v in WW.values():
+        if (vHn := v.Hn) not in usedWnames:
             usedWnames.add(vHn)
-            Wlst.append(Wshort([0], vHn, [], []))
+            Wlst.append(Wshort([0], vHn, [], [],[0,0,0])) # cs is m,w,P
             z = WbyM[vHn] = {'c': 0, 'b': 0, 'S': defaultdict(int), }
         ou = Wlst[-1]  # ибо квитанции воды идут подряд пофайлово
-        (cur := bdB[fullpath.els])
-        if (pos:=v2posInl[fullpath]).t=='wm': #in pairs    
+        (cur := bdB[v.els])
+        if (pos:=v2posInl[v]).t=='wm': #in pairs    
             www, mmm = cur.pairs[pos.pos]
-            ou.w.append([www, mmm]) 
+            ou.w.append([www, mmm]);ou.cs[2]+=1 
             z['S'][(yHn := mmm.Hn)] += 1
             MbyW[yHn]['S'][www.Hn] += 1
-            MbyW[yHn]['p'].remove(mmm.pN)
+            try:
+                MbyW[yHn]['p'].remove(mmm.pN)
+            except Exception as e:
+                raise(e)
         else:
-            ou.w.append([cur.wl.pop(0),0]) 
+            ou.w.append([cur.wl.pop(0),0]);ou.cs[1]+=1 
             z['b'] += 1
         z['c'] += 1
     for ou in Wlst:
@@ -342,23 +360,36 @@ def buildDSmakingCake(WW, MM, ofld):
     for ou in Wlst:
         for el in ou.w:
             if not el[1]:
-                ou.wm.append(el)
+                ou.wm.append(el);#ou.cs см выше при ou.w
                 continue
-            curMek=MekAmbit[el[1].Hn]
-            cur_all,cur_wmz=curMek['all'],curMek['wmz']
+            curMekM=MekAmbit[el[1].Hn]
+            cur_all,cur_wmz=curMekM['all'],curMekM['wmz']
             PosInWmz=cur_wmz.index(el[1].pN)
             if cur_wmz[PosInWmz-1]<0: #случай первого в файле == PozInWmz==1
                 for i in range(el[1].pN):
-                    if(fullpath:=cur_all[i]):
-                        ou.wm.append([0,fullpath])
+                    if(mm:=cur_all[i]): # and while mm.pN<el[1].pN
+                        ou.wm.append([0,mm]);ou.cs[0]+=1
             ou.wm.append(el)
             RightEdge=cur_wmz[PosInWmz+1]
             i=el[1].pN+1
             while i<RightEdge:
-                if(fullpath:=cur_all[i]):
-                    ou.wm.append([0,fullpath])
+                if(mm:=cur_all[i]): # and while mm.pN<el[1].pN
+                    ou.wm.append([0,mm]);ou.cs[0]+=1
                 i+=1
-        ou.weight[0] =len(ou.wm)  
+        ou.weight[0] =len(ou.wm);#== sum(ou.cs)   # число листов
+    #дописываем незацепленные Meк к Wlst
+    IslandMek=[Hn for Hn in MekAmbit.keys() if len(MekAmbit[Hn]['wmz'])==2]
+    print("Незацпленные  МЭК-файлы:",len(IslandMek))
+    pprint.pprint(IslandMek,width=99999999)
+    for Hn in IslandMek:
+        if (vHn := Hn) not in usedWnames:
+            usedWnames.add(vHn)
+            Wlst.append(Wshort([0], vHn, [], [],[0,0,0])) # cs is m,w,P
+        ou = Wlst[-1]
+        for v in MekAmbit[Hn]['all'].values(): # исходим что страницы мек в pN возрастающем 
+            ou.wm.append([0,v]);ou.cs[0]+=1
+        ou.weight[0] =len(ou.wm)
+
     procs, chunks = [], [Nparts([0], [], i+1) for i in range(inN)] 
     for e in sorted(Wlst,key=lambda e: e.weight[0], reverse=True):  # e is namedtuple('Wshort', 'weight Hn wm w')
         (fullpath := min(chunks)).sum[0] += e.weight[0]
@@ -367,31 +398,15 @@ def buildDSmakingCake(WW, MM, ofld):
         proc = mp.Process(target=inSubmergeW, args=(chunk, unk, rname))
         procs.append(proc)
         proc.start()
-    for proc in procs:
-        proc.join() 
-    
+    for proc in procs:  proc.join() 
     print(timing.log('totalW_data_merging', "ПарамПамПам"))
     print(f">WWW   end:{datetime.now()}")
-    def makingMekOnes(unk):
-        procs = []
-        IslandMek=[[Hn,path] for Hn,path in rname.items() if Hn[0] == 'M' and len(MekAmbit[Hn]['wmz'])==2]
-        print("Непривязанные МЭК-файлы(before_sort):",len(IslandMek))
-        pprint.pprint([z[0]for z in IslandMek],width=99999999)
-        IslandMek.sort(key=lambda Hn_path:pagesInPDF(Hn_path[1]),reverse=True)
-        print("Непривязанные МЭК-файлы( after_sort):",len(IslandMek))
-        pprint.pprint([z[0]for z in IslandMek],width=99999999)
-        for i in range(inN):
-            proc = mp.Process(target=inSubMekOnes, args=(unk, IslandMek[i::inN], i))
-            procs.append(proc)
-            proc.start()
-        for proc in procs:
-            proc.join()
-    makingMekOnes(unk)
+
     pprint.pprint(MbyW, width=99999999, stream=open(join(ofld, 'MbyW'), 'w'))
     print(timing.log('4_1', ":MbyW"))
     pprint.pprint(WbyM, width=99999999, stream=open(join(ofld, 'WbyM'), 'w'))
     print(timing.log('4_2', ":WbyM"))
-    pprint.pprint(bdB,width=99999999, stream=open(join(ofld, 'bdB'), 'w'))
+    #pprint.pprint(bdB,width=99999999, stream=open(join(ofld, 'bdB'), 'w'))
     print(timing.log('4_3', ":bdB"))
     def MKadrlist():
         adrlist=[]

@@ -9,7 +9,7 @@ import sys
 #----------
 
 def lst(path):
-    return [a.replace('.pdf','') for a in os.listdir(path) if a.split('.')[-1]=='pdf']
+    return [a.replace('.py','') for a in os.listdir(path) if a.split('.')[-1]=='py']
 
 def getstatWMw(b):
     r={'m':0,'w':0,}
@@ -41,11 +41,13 @@ def getS(path):
     df=pd.DataFrame(allbundle)
     print(f'all is {(z:=bundle(*df.sum(1)))}')
     print(f'input stat: allM={z.m+z.P} allWT={z.w+z.P}')
+    return df
 
 
 if __name__=='__main__':
     path=sys.argv[-1] if sys.argv[1:] else '.'
-    getS(join(path,'WMpdfs'))
+    fld='WMpdfs'
+    getS(join(path,'' if path.endswith(fld)else fld))
 
 
 

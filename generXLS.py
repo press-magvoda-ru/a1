@@ -11,54 +11,71 @@ import string
 alf=string.ascii_uppercase
 #добавил номер файла в листах для "облегчения ориентирования" заместо артикуляции елсника в межкоммуникации коллег 
 def main(folders, out):
-    for inF in mnL:
+    #open dict of key-filename value=
+    # all Pgs 
+    # 
+    # info about all (W|M)
+    for fullPathFile in mnL:
+        if fullPathFile.find('$bundle')==-1:
+            continue
         w1, w2, wSqsW, wpaW ,wSqsM,wNums = [0]*6
         c1, cSqsW,cuuuW,cpaW, cpaM,cuuuM,cSqsM,c2 = [0]*8
-        wb.create_sheet(t :=(tt:=inF.split('.'))[0])
-        print(inF, end=' ')
-        sheet = wb[t]
+        wb.create_sheet(pdfname :=(sp:=fullPathFile.split('$'))[0].split('\\')[-1].strip())
+        print(fullPathFile, end=' ')
+        pdfPath='$'.join(sp[:-1])
+        print(pdfPath)
+        sheet = wb[pdfname]
+        #print(wb.sheetnames)
+        r = 1
+        c = 0
+        #sheet.cell(row=(r := r+1), column=(c := 2)).value=f'{sp[-1]}:';wNums=len(sp[-1])+1
         
-        # print(wb.sheetnames)
-        # следующего раза не будя: шапку и шИрины столбцов мона(imho) драйверам ввывода выставлять не на
-        # как сейчас из говна говна 
-        r = 0
-        sheet.cell(row=(r := r+1), column=(c := 2)).value=f'{tt[-1]}:';wNums=len(tt[-1])+1
-
-        w, m = int((m := t.split('m'))[0][1:]), int(m[1])
-        (lfiles := sorted(
-            os.popen(f'dir {inF} /s /b |wsl grep pdf').read().splitlines()))
-        for N,v in enumerate(lfiles,1):
-            n, z, = 0, 0
-
-            def put(c, Thing):
-                sheet.cell(row=k, column=c).value = str(Thing)
-            c = 0
-            cell = sheet.cell(row=(r := r+1), column=(c := c+1))
-            els = os.path.basename(v).split('ELS ')[1].split('.pdf')[0]
-            cell.value = f'=HYPERLINK("{os.sep.join(v.split(os.sep)[-2:])}","{els}")'
-            cell.style = "Hyperlink"
-            
-            cell = sheet.cell(row=r, column=(c := c+1));    cell.value=f'{N}:'.rjust(wNums)
-            doc = fitz.open(v)
-            k, l = r, c-1
-            for p in range(w):
-                k, l, z = k+1, c-1, reparseWxMx.prsW(doc.get_page_text(p), v, p)
-                put(l := l+1, f'={z.pageNum+1}')
-                put(c1 := (l := l+1), z.adr.replace('%','/').rjust(w1 := max(w1, len(z.adr))))
-                put(cSqsW := (l := l+1), z.sqS)#.rjust
-                (wSqsW := max(wSqsW, len(z.sqS)))#)
-                put(cuuuW:=(l := l+1), z.realuuu or z.uuu)
-                put(cpaW:=(l := l+1), z.pa); wpaW=max(wpaW,len(z.pa))
-            k = r
-            for p in range(w, w+m):
-                k, n, z = k+1, l+1, reparseWxMx.prsM(doc.get_page_text(p), v, p)
-                put(cpaM := (n := n+1), '='+z.pa)
-                put(cuuuM:=(n := n+1), z.realuuu or z.uuu)
-                put(cSqsM:=(n := n+1), z.sqS.rjust(wSqsM:=max(wSqsM,len(z.sqS))))
-                put(n := n+1, z.adr.replace('%', '/'))
-                w2, c2 = max(w2, len(z.adr)), n
-                put(n := n+1, f'={z.pageNum+1}')
-            r = r+max(w, m)
+        Pgs=reparseWxMx.DictFromFile(fullPathFile)
+        os.system(f'del {fullPathFile}')
+        def put(c, Thing):
+            sheet.cell(row=r, column=c).value = str(Thing)
+        #set header
+        put(c:=c+1,"W-№");
+        put(c:=c+1,"W-ЛС");
+        put(c:=c+1,"W-Адрес");
+        put(c:=c+1,"W-площадь");
+        put(c:=c+1,"W-ФИО");
+        put(c:=c+1,"W-ЕЛС");
+   
+        put(c:=c+1,"M-ЕЛС");
+        put(c:=c+1,"M-ФИО");
+        put(c:=c+1,"M-площадь");
+        put(c:=c+1,"M-Адрес");
+        put(c:=c+1,"M-ЛС");
+        put(c:=c+1,"M-№");
+        sz=c    
+        for x,y in Pgs:
+            r+=1
+            l = 0
+            # cell = sheet.cell(row=(r := r+1), column=(c := c+1))
+            # els = x.els
+            # cell.value = f'=HYPERLINK("{pdfPath}.pdf","{els}")'
+            # cell.style = "Hyperlink"
+            put(l := l+1, f'={x.pN+1}')
+            put(cpaW:=(l := l+1), x.pa); wpaW=max(wpaW,len(x.pa))
+            put(c1 := (l := l+1), x.adr.replace('%', '/').rjust(w1 := max(w1, len(x.adr))))
+            put(cSqsW := (l := l+1), x.sq)#.rjust
+            (wSqsW := max(wSqsW, len(x.sq)))#)
+            put(cuuuW:=(l := l+1), x.u)
+            put(l := l+1, x.els)
+            z=y
+            put(l := l+1, z.els)
+            put(cuuuM:=( l:= l+1), z.u)
+            put(cSqsM:=(l := l+1), z.sq.rjust(wSqsM:=max(wSqsM,len(z.sq))))
+            put(l := l+1, z.adr.replace('%', '/'))
+            w2, c2 = max(w2, len(z.adr)), l
+            put(cpaM := (l := l+1), z.pa)
+            put(l := l+1, f'={z.pN+1}')
+        for i in range(sz):
+            sheet.column_dimensions[alf[i]].width = 13
+        for i in [2,9]:
+            sheet.column_dimensions[alf[i]].width = 40
+        continue
         sheet.column_dimensions['A'].width = 13
         sheet.column_dimensions[alf[1]].width = wNums+1 #len(str(w))+1
         sheet.column_dimensions[alf[c1-1]].width = w1
@@ -70,11 +87,16 @@ def main(folders, out):
         sheet.column_dimensions[alf[cuuuM-1]].width = 3+3
         sheet.column_dimensions[alf[cSqsM-1]].width = wSqsM
         sheet.column_dimensions[alf[c2-1]].width = w2 
-        sheet.column_dimensions[alf[n-1]].width = len(f'{m+w}')+1
+        sheet.column_dimensions[alf[l-1]].width = len(f'{100}')+1
 
+print(sys.argv)
 cur = (args := sys.argv)[1:] and args[1] or "."
-(mnL := sorted(os.popen(f'dir {cur} /AD /b |wsl grep w').read().splitlines()))
+s='*.py'
+(mnL := sorted(
+    os.popen(f'dir "{os.path.join(cur,s)}" /S /b').read().splitlines()) # /OD get Size of pdf desc
+    )
 wb = openpyxl.Workbook()
 wb.remove_sheet(wb.active)
 main(mnL, wb)
-wb.save(f'{rezname.rezname()}.xlsx')
+wb.save((nm:=f'{rezname.rezname()}.xlsx'))
+os.system(f'start "" "cmd /c {nm}"')

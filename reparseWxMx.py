@@ -1,19 +1,28 @@
 from functools import lru_cache
 from collections import namedtuple
-import timing
+import timing 
 from os.path import dirname, basename
 from os import sep
 # print('попячено из a1/splitingOfMandV.py  c дополнением лицевых и площади')
 # CluesOfPage('W',els,uuu,adr,src,pageNum,realuuu if realuuu!=uuu else ''))
 Pg = namedtuple('Pg', 'pN Hn u els pa sq adr')
 bundle = namedtuple('bundle','m w P kvt sps tot')
+
+def makeEmptyPg():
+    return Pg('','','','ПустоЛист','','','')
+    return Pg(pN,*['Пусто']*6)
+def makeFakeNxtPg(v:Pg):
+    t={v._fields[i]:'N/A'for i,fld in enumerate(v)}
+    t['pN'],t['Hn'],t['els']=v.pN+1,v.Hn,'ХВОСТ' or v.els
+    return Pg(*t.values())#e=  #==e.pN=v.pN+1 from same File
+
 rname = {}
 def DictFromFile(path):
     """TODO import ast;ast.literal_eval"""
     return eval(open(path).read())  # читаем словарь - куда деваться
 def name2str(fVAReqVALUE):return fVAReqVALUE.split('=', 1)[0] # name2str(f'{var=}')
 @lru_cache(999)
-def Hn(path,Tp='M'):  # hash name from path ;#Tp  in ['M','W']
+def Hn(path,Tp='M'):  # hash name from path ;#Tp  in ['M','W','R']
     a = basename(path).split('.', 1)[0].split('-')
     rez=''
     if Tp=='M':
@@ -24,6 +33,8 @@ def Hn(path,Tp='M'):  # hash name from path ;#Tp  in ['M','W']
             raise Exception(msg)
     if Tp=='W':
         rez = f"W-{'-'.join(dirname(path).split(sep)[-1].strip().replace('-',' ').split()[-2:])}"
+    if Tp=='R': # cose avg(M,W)  or as same chr(((ord('M')+ord('W'))//2)
+        rez = basename(path).split('$')[0].strip()
     if rez:
         rname[rez] = path  # полный абсолютный путь файла для сборки страниц в итоге
         return rez
@@ -65,7 +76,8 @@ _cache_ofprsW, b_c = {}, {ord(c): None for c in ' \xa0'}
 def prsW(page, src, pageNum):
     global _cache_ofprsW
     if not page.startswith('ЕДИНЫЙ'):
-        return _cache_ofprsW  # вероятней всего это выехавшее за 1 страницу примечание
+        #3 хвоста:
+        return (_cache_ofprsW:=makeFakeNxtPg(_cache_ofprsW))  # вероятней всего это выехавшее за 1 страницу примечание
     if src not in rname:
         src = Hn(src,'W')
     page = page.replace('\xa0', ' ')
