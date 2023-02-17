@@ -9,7 +9,7 @@ from reparseWxMx import Hn, Pg, bundle, add2Hn, DictFromFile, name2str, prsM, pr
 import inspect; __LINE__ = inspect.currentframe()
 print(__LINE__.f_lineno);print(__LINE__.f_lineno)
 #+1 or unk# +1 for de_ug purpose:
-inN, de_ug =os.cpu_count()+1, 0 +1 
+inN, de_ug =os.cpu_count()+1, 0 #+1 
 #root=''
 def mkmk(fld): # утилита для mainUI
     if not os.path.isdir(fld):
@@ -58,15 +58,16 @@ def mainUI(in_srcM,in_srcW,in_fld):
             mkmk(fld)
             print(srcM,srcW,fld)
             #HERE use SAGEread for 
+            nm='';
             if not de_ug:
                 M_data_spliting(srcM, fld) # если чек т.е есть mTotB был то воспользоваться УЖОЙным M_
                 W_data_spliting(srcW, fld)
                 pprint.pprint(rname, stream=open(
                     join(fld, name2str(f'{rname=}')), 'w'), width=333)  # nero are
-                WM_mergeFromMultiPagePdf(fld, fld, fld)
+                nm=WM_mergeFromMultiPagePdf(fld, fld, fld)
             else: # de_ug yap
                 rootTotS=r'C:\AAA\MWrez_2023-02-17__14-35-06' #r"C:\AAA\MWrez_2023-02-16__08-35-37" 
-                WM_mergeFromMultiPagePdf(rootTotS, rootTotS, fld)# de_ug of doubling All
+                nm=WM_mergeFromMultiPagePdf(rootTotS, rootTotS, fld)# de_ug of doubling All
             sys.exit()
     app = QtWidgets.QApplication(sys.argv)
     myWindow = mn_Window()
@@ -210,8 +211,9 @@ def WM_mergeFromMultiPagePdf(srcW, srcM, outfld):
     if de_ug:
         global rname
         rname=DictFromFile(join(srcW or srcM,'rname'))#DictFromFile(join(root,'rname'))
-    buildDSmakingCake(  W := DictFromFile(join(srcW, 'wTotB')),
+    nm=buildDSmakingCake(  W := DictFromFile(join(srcW, 'wTotB')),
                         M := DictFromFile(join(srcM, 'mTotB')), outfld)
+    return nm
 pdfnum = 0
 def bundlename(name,cs):#counters[m,w,wm]
         kvt=sum(cs)+cs[-1]; tot=2*sum(cs);  sps=tot-kvt
@@ -418,7 +420,11 @@ def buildDSmakingCake(WW, MM, ofld):
     
     from  debundle import getS
     getS(unk)
+
+    from generXLS import makeXLS
+    rez=makeXLS(unk)
     print(timing.log('4_E', "Отсохронялись"))
+    return rez
 import obsolete
 if __name__ == '__main__':
     mp.freeze_support()

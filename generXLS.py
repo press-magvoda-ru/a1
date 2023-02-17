@@ -10,20 +10,20 @@ import rezname
 import string
 alf=string.ascii_uppercase
 #добавил номер файла в листах для "облегчения ориентирования" заместо артикуляции елсника в межкоммуникации коллег 
-def main(folders, out):
+def main(mnL, wb):
     #open dict of key-filename value=
     # all Pgs 
     # 
     # info about all (W|M)
+    fl=0;
     for fullPathFile in mnL:
         if fullPathFile.find('$bundle')==-1:
             continue
         w1, w2, wSqsW, wpaW ,wSqsM,wNums = [0]*6
         c1, cSqsW,cuuuW,cpaW, cpaM,cuuuM,cSqsM,c2 = [0]*8
         wb.create_sheet(pdfname :=(sp:=fullPathFile.split('$'))[0].split('\\')[-1].strip())
-        print(fullPathFile, end=' ')
         pdfPath='$'.join(sp[:-1])
-        print(pdfPath)
+        print(fl:=fl+1,fullPathFile)#, end=' ') print(pdfPath)
         sheet = wb[pdfname]
         #print(wb.sheetnames)
         r = 1
@@ -31,7 +31,7 @@ def main(folders, out):
         #sheet.cell(row=(r := r+1), column=(c := 2)).value=f'{sp[-1]}:';wNums=len(sp[-1])+1
         
         Pgs=reparseWxMx.DictFromFile(fullPathFile)
-        os.system(f'del {fullPathFile}')
+        #os.system(f'del "{fullPathFile}"')
         def put(c, Thing):
             sheet.cell(row=r, column=c).value = str(Thing)
         #set header
@@ -89,14 +89,20 @@ def main(folders, out):
         sheet.column_dimensions[alf[c2-1]].width = w2 
         sheet.column_dimensions[alf[l-1]].width = len(f'{100}')+1
 
-print(sys.argv)
-cur = (args := sys.argv)[1:] and args[1] or "."
-s='*.py'
-(mnL := sorted(
-    os.popen(f'dir "{os.path.join(cur,s)}" /S /b').read().splitlines()) # /OD get Size of pdf desc
-    )
-wb = openpyxl.Workbook()
-wb.remove_sheet(wb.active)
-main(mnL, wb)
-wb.save((nm:=f'{rezname.rezname()}.xlsx'))
-os.system(f'start "" "cmd /c {nm}"')
+def makeXLS(path):
+    s='*.py'
+    (mnL := #sorted(
+    os.popen(f'dir "{os.path.join(path,s)}" /S /O-S /b').read().splitlines()) # /OD get Size of pdf desc
+    #)
+    wb = openpyxl.Workbook()
+    wb.remove_sheet(wb.active)
+    main(mnL, wb)
+    wb.save((nm:=f'{os.path.join(path.rezname.rezname())}.xlsx'))
+    #os.system(f'start "" "cmd /c {nm}"')
+    return nm
+
+if __name__=='__main__':
+    print(sys.argv)
+    cur = (args := sys.argv)[1:] and args[1] or "."
+    makeXLS(cur)
+
