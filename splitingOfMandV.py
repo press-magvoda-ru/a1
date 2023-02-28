@@ -11,7 +11,7 @@ from generXLS import makeXLS,typefilesOfdata
 import inspect; __LINE__ = inspect.currentframe()
 print(__LINE__.f_lineno);print(__LINE__.f_lineno)
 #+1 or unk# +1 for de_ug purpose:
-inN, de_ug =os.cpu_count()+1, 0 +1 #
+inN, de_ug =os.cpu_count()+1, 0 #+1 #
 #root=''
 def mkmk(fld): # утилита для mainUI
     if not os.path.isdir(fld):
@@ -332,14 +332,14 @@ def buildDSmakingCake(WW, MM, ofld):
         return AmbitByHn
     MekAmbit=makeMekAmbit(MM)
     #Wshort = namedtuple('Wshort', 'weight Hn wm w') from Head 
-    Wlst, usedWnames = [], set()
+    Wlst, usedWnames = {}, set()
     # достройка карты с прициплением непрививязанных МЭК
     for v in WW.values():
-        if (vHn := v.Hn) not in usedWnames:
-            usedWnames.add(vHn)
-            Wlst.append(Wshort([0], vHn, [], [],[0,0,0])) # cs is m,w,P
+        if (vHn := v.Hn) not in Wlst: #usedWnames:
+            #usedWnames.add(vHn)
+            Wlst[vHn]=Wshort([0], vHn, [], [],[0,0,0]) # cs is m,w,P
             z = WbyM[vHn] = {'c': 0, 'b': 0, 'S': defaultdict(int), }
-        ou = Wlst[-1]  # ибо квитанции воды идут подряд пофайлово
+        ou = Wlst[vHn]  # ибо квитанции воды идут подряд пофайлово
         (cur := bdB[v.els])
         if (pos:=v2posInl[v]).t=='wm': #in pairs    
             www, mmm = cur.pairs[pos.pos]
@@ -354,7 +354,7 @@ def buildDSmakingCake(WW, MM, ofld):
             ou.w.append([cur.wl.pop(0),0]);ou.cs[1]+=1 
             z['b'] += 1
         z['c'] += 1
-    for ou in Wlst:
+    for ou in Wlst.values():
         ou.w.sort(key=lambda v:v[0].pN) # ну а вдруг водные чехарда
         for el in ou.w:
             if el[1]:
@@ -363,7 +363,7 @@ def buildDSmakingCake(WW, MM, ofld):
     for Hn,mk in MekAmbit.items():
         mk['wmz'].sort()
     #инвариант незацепленности MekAmbit[Hn(pathМЭКfile)]['wmz'].__len__()==2
-    for ou in Wlst:
+    for ou in Wlst.values():
         for el in ou.w:
             if not el[1]:
                 ou.wm.append(el);#ou.cs см выше при ou.w
@@ -388,16 +388,16 @@ def buildDSmakingCake(WW, MM, ofld):
     print("Незацпленные  МЭК-файлы:",len(IslandMek))
     pprint.pprint(IslandMek,width=99999999)
     for Hn in IslandMek:
-        if (vHn := Hn) not in usedWnames:
-            usedWnames.add(vHn)
-            Wlst.append(Wshort([0], vHn, [], [],[0,0,0])) # cs is m,w,P
-        ou = Wlst[-1]
+        if (vHn := Hn) not in Wlst: #usedWnames:
+            #usedWnames.add(vHn)
+            Wlst[vHn]=Wshort([0], vHn, [], [],[0,0,0]) # cs is m,w,P
+        ou = Wlst[vHn]
         for v in MekAmbit[Hn]['all'].values(): # исходим что страницы мек в pN возрастающем 
             ou.wm.append([0,v]);ou.cs[0]+=1
         ou.weight[0] =len(ou.wm)
 
     procs, chunks = [], [Nparts([0], [], i+1) for i in range(inN)] 
-    for e in sorted(Wlst,key=lambda e: e.weight[0], reverse=True):  # e is namedtuple('Wshort', 'weight Hn wm w')
+    for e in sorted(Wlst.values(),key=lambda e: e.weight[0], reverse=True):  # e is namedtuple('Wshort', 'weight Hn wm w')
         (fullpath := min(chunks)).sum[0] += e.weight[0]
         fullpath.lst.append(e)
     for chunk in chunks:
