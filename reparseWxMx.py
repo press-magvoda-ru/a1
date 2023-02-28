@@ -39,7 +39,7 @@ def Hn(path,Tp='M'):  # hash name from path ;#Tp  in ['M','W','R']
     if Tp=='R': # cose avg(M,W)  or as same chr(((ord('M')+ord('W'))//2)
         rez = basename(path).split('$')[0].strip()
     if rez:
-        if rname[rez] :
+        if rez in rname:
             rez+='_1'
         rname[rez] = path  # полный абсолютный путь файла для сборки страниц в итоге
         return rez
