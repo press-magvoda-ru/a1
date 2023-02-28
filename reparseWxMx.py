@@ -11,6 +11,9 @@ bundle = namedtuple('bundle','m w P kvt sps tot')
 def makeEmptyPg():
     return Pg('','','','ПустоЛист','','','')
     return Pg(pN,*['Пусто']*6)
+def PgIsEmpy(p:Pg):
+    return p.els==''.join(p[2:])
+
 def makeFakeNxtPg(v:Pg):
     t={v._fields[i]:'N/A'for i,fld in enumerate(v)}
     t['pN'],t['Hn'],t['els']=v.pN+1,v.Hn,'ХВОСТ' or v.els

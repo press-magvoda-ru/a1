@@ -1,5 +1,6 @@
 #debundle
 from reparseWxMx import bundle
+from generXLS import typefilesOfdata
 import os
 from os.path import join
 import sys
@@ -9,7 +10,7 @@ import sys
 #----------
 
 def lst(path):
-    return [a.replace('.py','') for a in os.listdir(path) if a.split('.')[-1]=='py']
+    return [a.replace(typefilesOfdata,'') for a in os.listdir(path) if a.endswith(typefilesOfdata)]
 
 def getstatWMw(b):
     r={'m':0,'w':0,}
