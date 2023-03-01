@@ -37,7 +37,7 @@ def Hn(path,Tp='M'):  # hash name from path ;#Tp  in ['M','W','R']
     if Tp=='W':
         rez = f"W-{'-'.join(dirname(path).split(sep)[-1].strip().replace('-',' ').split()[-2:])}"
         #собираем "хэш" от имени для различения файлов одного каталога (хз режут по 3000)
-        hsh='#'+''.join(w.strip()[0] for w in basename(path).split('.') if w.strip())[1:3]
+        hsh='#'+''.join(w.strip()[0] for w in basename(path).split('.') if w.strip())[2:6]
         rez+=hsh
     if Tp=='R': # cose avg(M,W)  or as same chr(((ord('M')+ord('W'))//2)
         rez = basename(path).split('$')[0].strip()
