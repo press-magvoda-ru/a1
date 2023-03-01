@@ -36,10 +36,13 @@ def Hn(path,Tp='M'):  # hash name from path ;#Tp  in ['M','W','R']
             raise Exception(msg)
     if Tp=='W':
         rez = f"W-{'-'.join(dirname(path).split(sep)[-1].strip().replace('-',' ').split()[-2:])}"
+        #собираем "хэш" от имени для различения файлов одного каталога (хз режут по 3000)
+        hsh='#'+''.join(w.strip()[0] for w in basename(path).split('.') if w.strip())[1:3]
+        rez+=hsh
     if Tp=='R': # cose avg(M,W)  or as same chr(((ord('M')+ord('W'))//2)
         rez = basename(path).split('$')[0].strip()
     if rez:
-        if rez in rname:
+        while rez in rname:
             rez+='_1'
         rname[rez] = path  # полный абсолютный путь файла для сборки страниц в итоге
         return rez
