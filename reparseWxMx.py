@@ -1,16 +1,25 @@
 from functools import lru_cache
 from collections import namedtuple
 import timing 
-from os.path import dirname, basename
-from os import sep
+from os.path import dirname, basename,join
+from os import sep,walk
 # print('попячено из a1/splitingOfMandV.py  c дополнением лицевых и площади')
 # CluesOfPage('W',els,uuu,adr,src,pageNum,realuuu if realuuu!=uuu else ''))
-Pg = namedtuple('Pg', 'pN Hn u els pa sq adr')
+Pg = namedtuple('Pg', 'pN Hn u els pa sq adr UrFcs Deliv')
+
 bundle = namedtuple('bundle','m w P kvt sps tot')
+Deliveries='Па-чин&Азимут&Мой дом&ГКС МКД&Левицкая'
+defMekDeliv=Deliveries.split('&')[-1]
+def lstInWithExtention(src,ext='.pdf'):
+    lst=[]
+    for r,_,f in walk(src):
+        for file in f:
+            if file.endswith(ext): lst.append(join(r,file))
+    return lst
 
 def makeEmptyPg():
-    return Pg('','','','ПустоЛист','','','')
-    return Pg(pN,*['Пусто']*6)
+    #return Pg('','','','ПустоЛист','','','')
+    return Pg('','','','ПустоСтр','','','','','') # возвращать Стр ибо сторона а не дубль- TODO посмотреть где используется литерал ПустоЛист    
 def PgIsEmpy(p:Pg):
     return p.els==''.join(p[2:])
 
@@ -56,6 +65,7 @@ def clearAdr(a):
         .replace(',пр-кт ',',пр-кт.').split('.',1)[-1].replace(' ','')
     return b
 def prsM(page, file, pN):
+    UrFcs='МЭК' #Q? константа тут али чё как?
     if file not in rname:
         file = Hn(file,'M')
     adr = page.split('\n', 1)[0].strip().replace('/', '%').replace('Корпус','%').replace(
@@ -69,9 +79,10 @@ def prsM(page, file, pN):
         print(f'from PrsM {page=} ,{file=} , {pN=} , {adr=} ')
         raise e
     if not (l := page.split('Лицевой счет:', 1)[1]):
-        return Pg(pN, file, '', '', '', '', adr)
+        return Pg(pN, file, '', '', '', '', adr, UrFcs, defMekDeliv)
     # print(l)
     pa = l.split('\n', 1)[0].strip()  # ''.join([e for e in l.split('\n',1)[0]
+    Deliv=l.split('\n', 2)[1].strip()
     sqS = l.split('помещения:')[1].split(maxsplit=1)[0]
     els = els[0].split('\n', 1)[0].strip() if (
         els := (l.split('Площад', 1)[0]).split('ЕЛС:', 1)[1:]) else ''
@@ -79,7 +90,7 @@ def prsM(page, file, pN):
         :6].replace('.', '')  # ?method  remove all from {. }
     if (rez := timing.fltru(uuu)) != uuu:
         uuu = f'{rez}|{uuu}'
-    return Pg(pN, file, uuu, els, pa, sqS, adr)
+    return Pg(pN, file, uuu, els, pa, sqS, adr, UrFcs, defMekDeliv)
 _cache_ofprsW, b_c = {}, {ord(c): None for c in ' \xa0'}
 def prsW(page, src, pageNum):
     global _cache_ofprsW
@@ -89,6 +100,9 @@ def prsW(page, src, pageNum):
     if src not in rname:
         src = Hn(src,'W')
     page = page.replace('\xa0', ' ')
+
+    UrFcs='&'.join(sorted(s.split('"')[1].upper() for s in page.split('\n') if s.startswith('ВСЕГО')))
+
     els = '' if len(t := page.split('ЕЛС:', 1)) < 2 else t[1].split(
         '\n', 1)[0].replace(' ', '')
     adr = (l := t[0].split('\n', 4))[1].replace('г.Магнитогорск', '').replace(
@@ -98,6 +112,9 @@ def prsW(page, src, pageNum):
     uuu = l[2].split(':', 1)[-1].translate(b_c)
     pa = '' if len(u := page.split('ЛИЦЕВОЙ СЧЕТ:', 1)
                    ) < 2 else u[1].split('\n', 1)[0].replace(' ', '')
+#    Deliv=''
+    Deliv=u[1].split('\n',2)[1].strip() #какие ваще есть чисто посмотреть
+    
     sqS = []
     sqS.append('' if len(v := u[-1].split('Общая площадь:', 1))
                < 2 else v[1].split('\n', 1)[0].split()[0].replace(' ', ''))
@@ -106,7 +123,7 @@ def prsW(page, src, pageNum):
     sqS = sqS[0]+'|'+sqS[1]
     if (rez := timing.fltru(uuu)) != uuu:
         uuu = f'{rez}|{uuu}'
-    return (_cache_ofprsW := Pg(pageNum, src, uuu, els, pa, sqS, adr))
+    return (_cache_ofprsW := Pg(pageNum, src, uuu, els, pa, sqS, adr, UrFcs, Deliv))
 """ from splitingOfMandV last
 #CluesOfPage('W',els,uuu,adr,src,pageNum,realuuu if realuuu!=uuu else ''))
 CluesOfPage=namedtuple('PageClues','type els uuu adr src pageNum realuuu')

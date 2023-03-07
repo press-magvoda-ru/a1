@@ -25,7 +25,7 @@ def SimpleJoinPdffromListOf(l, path, doc):
 def genDoublesDict(frm,to,fl='wTotB'):
     w=DictFromFile(join(frm,fl))
    
-    v=Pg(*range(7))
+    v=Pg(*range(len(Pg._fields)))
     # with open(to,'w') as file:
     #     print('{',file=file)
     #     for k,v1 in w.items():

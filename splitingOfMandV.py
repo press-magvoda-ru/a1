@@ -5,7 +5,8 @@ from functools import lru_cache
 from os.path import basename, dirname, join
 import fitz, rezname, timing
 import os
-from reparseWxMx import Hn, Pg, bundle, add2Hn, DictFromFile, name2str, prsM, prsW, rname, makeEmptyPg, makeFakeNxtPg
+from reparseWxMx import Hn, Pg, bundle, add2Hn, DictFromFile, name2str, prsM, prsW, rname,\
+    makeEmptyPg, makeFakeNxtPg, lstInWithExtention
 from generXLS import makeXLS,typefilesOfdata
 
 import inspect; __LINE__ = inspect.currentframe()
@@ -68,7 +69,7 @@ def mainUI(in_srcM,in_srcW,in_fld):
                     join(fld, name2str(f'{rname=}')), 'w'), width=333)  # nero are
                 nm=WM_mergeFromMultiPagePdf(fld, fld, fld)
             else: # de_ug yap
-                rootTotS=r'C:\AAA\MWrez_2023-02-28__15-47-32'#'C:\AAA\MWrez_2023-02-28__13-53-17' #r'C:\AAA\MWrez_2023-02-17__14-35-06' #r"C:\AAA\MWrez_2023-02-16__08-35-37" 
+                rootTotS=r'C:\AAA\MWrez_2023-03-07__15-52-36' #r'C:\AAA\MWrez_2023-03-06__14-40-51' #r'C:\AAA\MWrez_2023-03-06__13-36-47' #r'C:\AAA\MWrez_2023-02-28__15-47-32' #r'C:\AAA\MWrez_2023-02-28__13-53-17' #r'C:\AAA\MWrez_2023-02-17__14-35-06' #r"C:\AAA\MWrez_2023-02-16__08-35-37" 
                 nm=WM_mergeFromMultiPagePdf(rootTotS, rootTotS, fld)# de_ug of doubling All
             os.system(f'start "" "{nm[0]}"')
             os.system(f'start "" "{nm[1]}"')
@@ -109,12 +110,7 @@ def toNparts(elems:list, nparts:int, pages2weight, pages):
         (v := min(rez)).sum[0] += pages2weight[pages(e)]
         v.lst.append(e)
     return rez
-def lstInWithExtention(src,ext='.pdf'):
-    lst=[]
-    for r,d,f in os.walk(src):
-        for file in f:
-            if file.endswith(ext): lst.append(os.path.join(r,file))
-    return lst
+
 def inSubProcM(Tp, base, prt):
     i, pid = base, os.getpid()
     print(f'>>{Tp} from {prt.index} {os.getpid()} {os.getcwd()}')

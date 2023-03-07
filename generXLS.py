@@ -5,13 +5,16 @@ import openpyxl
 import os
 import sys
 import reparseWxMx
-from reparseWxMx import PgIsEmpy,bundle
+from reparseWxMx import PgIsEmpy,bundle,lstInWithExtention,Deliveries,defMekDeliv
 #import fitz
 import rezname
 import string
 alf=string.ascii_uppercase
 typefilesOfdata=".dict_of_pages"
 ZZ=[0]
+"""Urs по мере увелечения контрАгентов выбирать из Gui c нижеследующим умолчанием"""
+Urs='ВОДОКАНАЛ&ТЕПЛОФИКАЦИЯ&МЭК&АЗИМУТ&ГКС МКД'
+
 def mainXLSsheetAndFresh(mnL, wb,wf): ## пока один поток сбора в два потока выгруза
     #фарш#
     """
@@ -25,7 +28,7 @@ def mainXLSsheetAndFresh(mnL, wb,wf): ## пока один поток сбора
     wf.create_sheet(strTotal)
     total=wf[strTotal]
     for fullPathFile in mnL:
-        if fullPathFile.find('$bundle')==-1:
+        if fullPathFile.find('$bundle')<0:
             continue
         bI=1;
         bC=1+1 # len bundle is 6
@@ -53,19 +56,18 @@ def mainXLSsheetAndFresh(mnL, wb,wf): ## пока один поток сбора
         sheet = wb[pdfname]
         shfre = wf[pdfname]
         def Hehehe(n): # 1-26 A-Z; 27-... AB ... for first 26**2 ?
-            n-=1
-            if n<26:return alf[n]
-            return alf[n//26-1]+alf[n%26]
+            if (n:=n-1)<26:return alf[n]
+            return alf[n//26-1]+alf[n%26]   # n явно меньше 625
         total.column_dimensions[Hehehe(fl)].width = 12
 
         r+=1
         for i in 'b':
-            put(1,f'  униМЭК ')
-            put(2,f'униВодТеп') #
+            put(1,f'толькоМЭК')
+            put(2,f'толькоВдТ') #
             put(3,f'двухСторо')
             put(4,f'стрСодерж')
             put(5,f'стрПустых')
-            put(6,f'стрОобщее')
+            put(6,f'стрОбщее')
         r+=1    
         for i in 'c':
             put(1,f'{stat.m:^9}')
@@ -96,6 +98,12 @@ def mainXLSsheetAndFresh(mnL, wb,wf): ## пока один поток сбора
             put(c:=c+1,"M-Адрес");
             put(c:=c+1,"M-ЛС");
             put(c:=c+1,"M-№");
+            
+            put(c:=c+1,"Доставщик")
+
+            put(c:=c+1,"ВсеКонтрА")
+            for j in Urs.split('&'):
+                put(c:=c+1,f'{j}:')
         sz=c    
         for x,y in Pgs:
             PgIsEmpy(x) and putfre(freR:=freR+1,x.pN+1)
@@ -120,7 +128,19 @@ def mainXLSsheetAndFresh(mnL, wb,wf): ## пока один поток сбора
             w2, c2 = max(w2, len(z.adr)), l
             put(cpaM := (l := l+1), z.pa)
             put(l := l+1, f'={z.pN+1}')
-        putfre(0,f'Кол-во: {freR}');shfre.column_dimensions[alf[0]].width = 20
+            
+            D=x.Deliv or y.Deliv 
+            for i in Deliveries.split('&'):
+                if ~D.find(i):
+                    DD=i;break;
+            else:
+                    DD=D#defMekDeliv
+            put(l:=l+1,DD) # выбор из управляек и фолбэк Ливицкая здесь или при сборе ?
+            V='&'.join([x.UrFcs,y.UrFcs]).strip('&')
+            put(l:=l+1,V)
+            for j in Urs.split('&'):
+                put(l:=l+1,f'={int(not not ~V.find(j))}')  #"пока так" если имена могут префиксоватся что искать &ndl& с предварительным оборачиванием &V& 
+        putfre(0,f'{freR}');shfre.column_dimensions[alf[0]].width = 20 #Кол-во: в левленный столбец пояснение если чё
         ZZ[0]+=freR
 
         for i in range(sz):
@@ -140,17 +160,20 @@ def mainXLSsheetAndFresh(mnL, wb,wf): ## пока один поток сбора
         sheet.column_dimensions[alf[cSqsM-1]].width = wSqsM
         sheet.column_dimensions[alf[c2-1]].width = w2 
         sheet.column_dimensions[alf[l-1]].width = len(f'{100}')+1
-    putTot(1,1,f'Общее кол-во: {ZZ[0]}')
+    putTot(1,1,f'{ZZ[0]}') #Общее кол-во:  в левленный столбец пояснение если чё
 def makeXLS(path):
-    s=f'*{typefilesOfdata}'
+    #s=f'*{typefilesOfdata}'
     (mnL := #sorted(
-    os.popen(f'dir "{os.path.join(path,s)}" /S /O-S /b').read().splitlines()) # /OD get Size of pdf desc
+   #os.popen(f'dir "{os.path.join(path,s)}" /S /O-S /b').read().splitlines()
+    lstInWithExtention(path,ext=typefilesOfdata)
+    ) # /OD get Size of pdf desc
+    """ """
     #)
     wb = openpyxl.Workbook(); wb.remove_sheet(wb.active)
     wf = openpyxl.Workbook(); wf.remove_sheet(wf.active)
     mainXLSsheetAndFresh(mnL, wb,wf)
     tik=rezname.rezname()
-    nm =f'SURV$${tik}.xlsx' ;#ЫГКМ  ну теперь ФСЁ ясНО
+    nm =f'SURV$${tik}.xlsx' ;#ЫГКМ  ну теперь ФСЁ ясНО # и выживальщики и pop-surv.gov74.ru lol
     nf =f'Fresh${tik}.xlsx'
     wb.save(nm:=f'{os.path.join(path,nm)}');wf.save(nf:=f'{os.path.join(path,nf)}')
     #os.system(f'start "" "cmd /c {nm}"')
