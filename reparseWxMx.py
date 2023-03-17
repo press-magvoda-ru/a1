@@ -68,16 +68,19 @@ def prsM(page, file, pN):
     UrFcs='МЭК' #Q? константа тут али чё как?
     if file not in rname:
         file = Hn(file,'M')
-    adr = page.split('\n', 1)[0].strip().replace('/', '%').replace('Корпус','%').replace(
-        ', ', ',').replace('. ', '.').replace(' %', '%').replace('г Магнитогорск', '')
-    # Вычищение adr
-    adr = clearAdr(adr)
-    try:
-        if adr[0] == '4' and adr[6] == ',':
-            adr = adr[7:]
-    except Exception as e:
-        print(f'from PrsM {page=} ,{file=} , {pN=} , {adr=} ')
-        raise e
+    if False:
+        adr = page.split('\n', 1)[0].strip().replace('/', '%').replace('Корпус','%').replace(
+            ', ', ',').replace('. ', '.').replace(' %', '%').replace('г Магнитогорск', '')
+        # Вычищение adr
+        adr = clearAdr(adr)
+        try:
+            if adr[0] == '4' and adr[6] == ',':
+                adr = adr[7:]
+        except Exception as e:
+            print(f'from PrsM {page=} ,{file=} , {pN=} , {adr=} ')
+            raise e
+    else:
+        adr = page.split('\n', 1)[0].strip() # сырой адрес МЭК
     if not (l := page.split('Лицевой счет:', 1)[1]):
         return Pg(pN, file, '', '', '', '', adr, UrFcs, defMekDeliv)
     # print(l)
@@ -105,10 +108,13 @@ def prsW(page, src, pageNum):
 
     els = '' if len(t := page.split('ЕЛС:', 1)) < 2 else t[1].split(
         '\n', 1)[0].replace(' ', '')
-    adr = (l := t[0].split('\n', 4))[1].replace('г.Магнитогорск', '').replace(
-        '/', '%').replace('"', "'").translate(b_c).replace('корп.', '%').replace('корп', '%') #+4
-    # Вычищение adr
-    adr = clearAdr(adr)
+    if False:
+        adr = (l := t[0].split('\n', 4))[1].replace('г.Магнитогорск', '').replace(
+            '/', '%').replace('"', "'").translate(b_c).replace('корп.', '%').replace('корп', '%') #+4
+        # Вычищение adr
+        adr = clearAdr(adr)
+    else:
+        adr = (l := t[0].split('\n', 4))[1] # сырой адрес ВоТе
     uuu = l[2].split(':', 1)[-1].translate(b_c)
     pa = '' if len(u := page.split('ЛИЦЕВОЙ СЧЕТ:', 1)
                    ) < 2 else u[1].split('\n', 1)[0].replace(' ', '')
