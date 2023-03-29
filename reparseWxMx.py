@@ -10,11 +10,12 @@ Pg = namedtuple('Pg', 'pN Hn u els pa sq adr UrFcs Deliv')
 bundle = namedtuple('bundle','m w P kvt sps tot')
 Deliveries='Па-чин&Азимут&Мой дом&ГКС МКД&Левицкая'
 defMekDeliv=Deliveries.split('&')[-1]
-def lstInWithExtention(src,ext='.pdf'):
+def lstInWithExtention(src,ext='.pdf',non='___'):
     lst=[]
     for r,_,f in walk(src):
         for file in f:
-            if file.endswith(ext): lst.append(join(r,file))
+            if file.endswith(ext): 
+                if file.find(non)==-1:lst.append(join(r,file)) #фильтрация Сопроводитель
     return lst
 
 def makeEmptyPg():
@@ -95,10 +96,14 @@ def prsM(page, file, pN):
         uuu = f'{rez}|{uuu}'
     return Pg(pN, file, uuu, els, pa, sqS, adr, UrFcs, defMekDeliv)
 _cache_ofprsW, b_c = {}, {ord(c): None for c in ' \xa0'}
+lX=0
 def prsW(page, src, pageNum):
-    global _cache_ofprsW
+    global _cache_ofprsW,lX
     if not page.startswith('ЕДИНЫЙ'):
         #3 хвоста:
+        lX+=1
+        if lX>1:
+            breakpoint()
         return (_cache_ofprsW:=makeFakeNxtPg(_cache_ofprsW))  # вероятней всего это выехавшее за 1 страницу примечание
     if src not in rname:
         src = Hn(src,'W')
@@ -129,6 +134,7 @@ def prsW(page, src, pageNum):
     sqS = sqS[0]+'|'+sqS[1]
     if (rez := timing.fltru(uuu)) != uuu:
         uuu = f'{rez}|{uuu}'
+    lX=0
     return (_cache_ofprsW := Pg(pageNum, src, uuu, els, pa, sqS, adr, UrFcs, Deliv))
 """ from splitingOfMandV last
 #CluesOfPage('W',els,uuu,adr,src,pageNum,realuuu if realuuu!=uuu else ''))

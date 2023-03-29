@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../adr"
+		}
+	],
+	"settings": {
+		"outline.problems.enabled": false
+	}
+}

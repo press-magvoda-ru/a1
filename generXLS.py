@@ -24,23 +24,26 @@ def mainXLSsheetAndFresh(mnL, wb,wf): ## пока один поток сбора
     # all Pgs 
     # 
     # info about all (W|M)
-    strTotal='ИТОГОВАЯ'; fl=0
-    wf.create_sheet(strTotal)
-    total=wf[strTotal]
+    strTotal='ИТОГОВАЯ'; fl=0;  wf.create_sheet(strTotal);  total=wf[strTotal]
+    str_pgTotal ='total';           wb.create_sheet(str_pgTotal);   pgTotal=wb[str_pgTotal]
+    isFst=True; pgTotR=0
     for fullPathFile in mnL:
         if fullPathFile.find('$bundle')<0:
             continue
-        bI=1;
-        bC=1+1 # len bundle is 6
-        bT=bI+2
-        r,c,freR,freC = 0,0,0,1
-        def put(c, Thing):
-            sheet.cell(row=r, column=c).value = str(Thing)
+        bI=1;   bT=bI+2;    bC=1+1 # len bundle is 6
+        r,c,freR,freC = 0,0,0,1,
+        def put(c, Thing):            sheet.cell(row=r, column=c).value = str(Thing)
         def putfre(freR,Thing):
             shfre.cell(row=freR+bI, column=freC).value = str(Thing)
             putTot(freR+bT,fl,Thing)
-        def putTot(r,c,Thing):
-            total.cell(row=r, column=c).value = str(Thing)
+        def putTot(r,c,Thing):            total.cell(row=r, column=c).value = str(Thing)
+        def putPgTot(c,Thing):          pgTotal.cell(row=pgTotR, column=c).value = str(Thing)
+
+        def putAndPgTot(c,Thing,u=True):
+            put(c,Thing)
+            if u:
+                putPgTot(c+1,Thing)
+
         w1, w2, wSqsW, wpaW ,wSqsM,wNums = [0]*6
         c1, cSqsW,cuuuW,cpaW, cpaM,cuuuM,cSqsM,c2 = [0]*8
         (pdfname :=(sp:=fullPathFile.split('$'))[0].split('\\')[-1].strip())
@@ -52,6 +55,7 @@ def mainXLSsheetAndFresh(mnL, wb,wf): ## пока один поток сбора
         pdfPath='$'.join(sp[:-1])
         print(fl:=fl+1,fullPathFile)#, end=' ') print(pdfPath)
         putTot(2,fl,pdfname)
+
         #bundle = namedtuple('bundle','m w P kvt sps tot')
         sheet = wb[pdfname]
         shfre = wf[pdfname]
@@ -84,26 +88,28 @@ def mainXLSsheetAndFresh(mnL, wb,wf): ## пока один поток сбора
         #os.system(f'del "{fullPathFile}"')
         #set header
         r+=1
+        if isFst: pgTotR+=1
         for i in 'a':
-            put(c:=c+1,"W-№");
-            put(c:=c+1,"W-ЛС");
-            put(c:=c+1,"W-Адрес");
-            put(c:=c+1,"W-площадь");
-            put(c:=c+1,"W-ФИО");
-            put(c:=c+1,"W-ЕЛС");
+            putAndPgTot(c:=c+1,"W-№", isFst);
+            putAndPgTot(c:=c+1,"W-ЛС", isFst);
+            putAndPgTot(c:=c+1,"W-Адрес", isFst);
+            putAndPgTot(c:=c+1,"W-площадь", isFst);
+            putAndPgTot(c:=c+1,"W-ФИО", isFst);
+            putAndPgTot(c:=c+1,"W-ЕЛС", isFst);
     
-            put(c:=c+1,"M-ЕЛС");
-            put(c:=c+1,"M-ФИО");
-            put(c:=c+1,"M-площадь");
-            put(c:=c+1,"M-Адрес");
-            put(c:=c+1,"M-ЛС");
-            put(c:=c+1,"M-№");
+            putAndPgTot(c:=c+1,"M-ЕЛС", isFst);
+            putAndPgTot(c:=c+1,"M-ФИО", isFst);
+            putAndPgTot(c:=c+1,"M-площадь", isFst);
+            putAndPgTot(c:=c+1,"M-Адрес", isFst);
+            putAndPgTot(c:=c+1,"M-ЛС", isFst);
+            putAndPgTot(c:=c+1,"M-№", isFst);
             
-            put(c:=c+1,"Доставщик")
+            putAndPgTot(c:=c+1,"Доставщик", isFst)
 
-            put(c:=c+1,"ВсеКонтрА")
+            putAndPgTot(c:=c+1,"ВсеКонтрА", isFst)
             for j in Urs.split('&'):
-                put(c:=c+1,f'{j}:')
+                putAndPgTot(c:=c+1,f'{j}:', isFst)
+        isFst=False; # для однократного  заголовка в total
         sz=c    
         for x,y in Pgs:
             PgIsEmpy(x) and putfre(freR:=freR+1,x.pN+1)
@@ -113,21 +119,22 @@ def mainXLSsheetAndFresh(mnL, wb,wf): ## пока один поток сбора
             # els = x.els
             # cell.value = f'=HYPERLINK("{pdfPath}.pdf","{els}")'
             # cell.style = "Hyperlink"
-            put(l := l+1, f'={x.pN+1}')
-            put(cpaW:=(l := l+1), x.pa); wpaW=max(wpaW,len(x.pa))
-            put(c1 := (l := l+1), x.adr.replace('%', '/').rjust(w1 := max(w1, len(x.adr))))
-            put(cSqsW := (l := l+1), x.sq)#.rjust
+            pgTotR+=1; putPgTot(1,pdfname)
+            putAndPgTot(l := l+1, f'={x.pN+1}')
+            putAndPgTot(cpaW:=(l := l+1), x.pa); wpaW=max(wpaW,len(x.pa))
+            putAndPgTot(c1 := (l := l+1), x.adr.replace('%', '/').rjust(w1 := max(w1, len(x.adr))))
+            putAndPgTot(cSqsW := (l := l+1), x.sq)#.rjust
             (wSqsW := max(wSqsW, len(x.sq)))#)
-            put(cuuuW:=(l := l+1), x.u)
-            put(l := l+1, x.els)
+            putAndPgTot(cuuuW:=(l := l+1), x.u)
+            putAndPgTot(l := l+1, x.els)
             z=y
-            put(l := l+1, z.els)
-            put(cuuuM:=( l:= l+1), z.u)
-            put(cSqsM:=(l := l+1), z.sq.rjust(wSqsM:=max(wSqsM,len(z.sq))))
-            put(l := l+1, z.adr.replace('%', '/'))
+            putAndPgTot(l := l+1, z.els)
+            putAndPgTot(cuuuM:=( l:= l+1), z.u)
+            putAndPgTot(cSqsM:=(l := l+1), z.sq.rjust(wSqsM:=max(wSqsM,len(z.sq))))
+            putAndPgTot(l := l+1, z.adr.replace('%', '/'))
             w2, c2 = max(w2, len(z.adr)), l
-            put(cpaM := (l := l+1), z.pa)
-            put(l := l+1, f'={z.pN+1}')
+            putAndPgTot(cpaM := (l := l+1), z.pa)
+            putAndPgTot(l := l+1, f'={z.pN+1}')
             
             D=x.Deliv or y.Deliv 
             for i in Deliveries.split('&'):
@@ -135,11 +142,11 @@ def mainXLSsheetAndFresh(mnL, wb,wf): ## пока один поток сбора
                     DD=i;break;
             else:
                     DD=D#defMekDeliv
-            put(l:=l+1,DD) # выбор из управляек и фолбэк Ливицкая здесь или при сборе ?
+            putAndPgTot(l:=l+1,DD) # выбор из управляек и фолбэк Ливицкая здесь или при сборе ?
             V='&'.join([x.UrFcs,y.UrFcs]).strip('&')
-            put(l:=l+1,V)
+            putAndPgTot(l:=l+1,V)
             for j in Urs.split('&'):
-                put(l:=l+1,f'={int(not not ~V.find(j))}')  #"пока так" если имена могут префиксоватся что искать &ndl& с предварительным оборачиванием &V& 
+                putAndPgTot(l:=l+1,f'={int(not not ~V.find(j))}')  #"пока так" если имена могут префиксоватся что искать &ndl& с предварительным оборачиванием &V& 
         putfre(0,f'{freR}');shfre.column_dimensions[alf[0]].width = 20 #Кол-во: в левленный столбец пояснение если чё
         ZZ[0]+=freR
 
