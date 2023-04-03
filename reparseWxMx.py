@@ -3,9 +3,10 @@ from collections import namedtuple
 import timing 
 from os.path import dirname, basename,join
 from os import sep,walk
+from exceptlst import isBadMek
 # print('попячено из a1/splitingOfMandV.py  c дополнением лицевых и площади')
 # CluesOfPage('W',els,uuu,adr,src,pageNum,realuuu if realuuu!=uuu else ''))
-Pg = namedtuple('Pg', 'pN Hn u els pa sq adr UrFcs Deliv')
+Pg = namedtuple('Pg', 'pN Hn u els pa sq adr UrFcs Deliv isBad')
 
 bundle = namedtuple('bundle','m w P kvt sps tot')
 Deliveries='Па-чин&Азимут&Мой дом&ГКС МКД&Левицкая'
@@ -20,13 +21,17 @@ def lstInWithExtention(src,ext='.pdf',non='___'):
 
 def makeEmptyPg():
     #return Pg('','','','ПустоЛист','','','')
-    return Pg('','','','ПустоСтр','','','','','') # возвращать Стр ибо сторона а не дубль- TODO посмотреть где используется литерал ПустоЛист    
+    return Pg('','','','ПустоСтр','','','','','','') # возвращать Стр ибо сторона а не дубль- TODO посмотреть где используется литерал ПустоЛист    
 def PgIsEmpy(p:Pg):
-    return p.els==''.join(p[2:])
+    return p.els==''.join(p[2:-1]) #заморочка с int isBad
 
 def makeFakeNxtPg(v:Pg):
     t={v._fields[i]:'N/A'for i,fld in enumerate(v)}
-    t['pN'],t['Hn'],t['els']=v.pN+1,v.Hn,'ХВОСТ' or v.els
+    try:
+        t['pN'],t['Hn'],t['els']=v.pN+1,v.Hn,'ХВОСТ' or v.els
+    except Exception as e:
+        raise(e)
+        
     return Pg(*t.values())#e=  #==e.pN=v.pN+1 from same File
 
 rname = {}
@@ -82,8 +87,9 @@ def prsM(page, file, pN):
             raise e
     else:
         adr = page.split('\n', 1)[0].strip() # сырой адрес МЭК
+    isBad=isBadMek(adr)
     if not (l := page.split('Лицевой счет:', 1)[1]):
-        return Pg(pN, file, '', '', '', '', adr, UrFcs, defMekDeliv)
+        return Pg(pN, file, '', '', '', '', adr, UrFcs, defMekDeliv,isBad)
     # print(l)
     pa = l.split('\n', 1)[0].strip()  # ''.join([e for e in l.split('\n',1)[0]
     Deliv=l.split('\n', 2)[1].strip()
@@ -94,12 +100,13 @@ def prsM(page, file, pN):
         :6].replace('.', '')  # ?method  remove all from {. }
     if (rez := timing.fltru(uuu)) != uuu:
         uuu = f'{rez}|{uuu}'
-    return Pg(pN, file, uuu, els, pa, sqS, adr, UrFcs, defMekDeliv)
+    return Pg(pN, file, uuu, els, pa, sqS, adr, UrFcs, defMekDeliv,isBad)
 _cache_ofprsW, b_c = {}, {ord(c): None for c in ' \xa0'}
 lX=0
 def prsW(page, src, pageNum):
     global _cache_ofprsW,lX
-    if not page.startswith('ЕДИНЫЙ'):
+    if not(page.startswith('ЕДИНЫЙ')or
+    page.startswith('Погасите')):
         #3 хвоста:
         lX+=1
         if lX>1:
@@ -107,6 +114,8 @@ def prsW(page, src, pageNum):
         return (_cache_ofprsW:=makeFakeNxtPg(_cache_ofprsW))  # вероятней всего это выехавшее за 1 страницу примечание
     if src not in rname:
         src = Hn(src,'W')
+    if page.startswith('Погасите'):
+        page=page.partition('\n')[2]
     page = page.replace('\xa0', ' ')
 
     UrFcs='&'.join(sorted(s.split('"')[1].upper() for s in page.split('\n') if s.startswith('ВСЕГО')))
@@ -135,7 +144,7 @@ def prsW(page, src, pageNum):
     if (rez := timing.fltru(uuu)) != uuu:
         uuu = f'{rez}|{uuu}'
     lX=0
-    return (_cache_ofprsW := Pg(pageNum, src, uuu, els, pa, sqS, adr, UrFcs, Deliv))
+    return (_cache_ofprsW := Pg(pageNum, src, uuu, els, pa, sqS, adr, UrFcs, Deliv, 0))
 """ from splitingOfMandV last
 #CluesOfPage('W',els,uuu,adr,src,pageNum,realuuu if realuuu!=uuu else ''))
 CluesOfPage=namedtuple('PageClues','type els uuu adr src pageNum realuuu')

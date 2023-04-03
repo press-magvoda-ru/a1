@@ -7,9 +7,10 @@ import fitz, rezname, timing
 import os
 from reparseWxMx import Hn, Pg, bundle, add2Hn, DictFromFile, name2str, prsM, prsW, rname,\
     makeEmptyPg, makeFakeNxtPg, lstInWithExtention
+from itertools import chain
 from generXLS import makeXLS,typefilesOfdata
-
 import inspect; __LINE__ = inspect.currentframe()
+from exceptlst import Except
 print(__LINE__.f_lineno);print(__LINE__.f_lineno)
 #+1 or unk# +1 for de_ug purpose:
 inN, de_ug =os.cpu_count()+1, 0 #+1 #
@@ -69,7 +70,7 @@ def mainUI(in_srcM,in_srcW,in_fld):
                     join(fld, name2str(f'{rname=}')), 'w'), width=333)  # nero are
                 nm=WM_mergeFromMultiPagePdf(fld, fld, fld)
             else: # de_ug yap
-                rootTotS=r'C:\AAA\MWrez_2023-03-20__09-53-55' #r'C:\AAA\MWrez_2023-03-07__15-52-36' #r'C:\AAA\MWrez_2023-03-06__14-40-51' #r'C:\AAA\MWrez_2023-03-06__13-36-47' #r'C:\AAA\MWrez_2023-02-28__15-47-32' #r'C:\AAA\MWrez_2023-02-28__13-53-17' #r'C:\AAA\MWrez_2023-02-17__14-35-06' #r"C:\AAA\MWrez_2023-02-16__08-35-37" 
+                rootTotS=r'C:\AAA\MWrez_2023-03-29__22-47-56' #r'C:\AAA\MWrez_2023-03-29__19-26-09'#r'c:\aaa\MWrez_2023-03-29__10-11-48' #r'C:\AAA\MWrez_2023-03-20__09-53-55' #r'C:\AAA\MWrez_2023-03-07__15-52-36' #r'C:\AAA\MWrez_2023-03-06__14-40-51' #r'C:\AAA\MWrez_2023-03-06__13-36-47' #r'C:\AAA\MWrez_2023-02-28__15-47-32' #r'C:\AAA\MWrez_2023-02-28__13-53-17' #r'C:\AAA\MWrez_2023-02-17__14-35-06' #r"C:\AAA\MWrez_2023-02-16__08-35-37" 
                 nm=WM_mergeFromMultiPagePdf(rootTotS, rootTotS, fld)# de_ug of doubling All
             os.system(f'start "" "{nm[0]}"')
             os.system(f'start "" "{nm[1]}"')
@@ -274,15 +275,47 @@ def inSubmergeW(prt, ofld, rname):
 def buildDSmakingCake(WW, MM, ofld):
     os.chdir(ofld)  # на усях слу
     print(timing.log('3.-2', "buildWowDataStructureTM:"))
+    ToBad=[];toR=[]
+    for k,v in MM.items():
+        if v.isBad:
+            ToBad.append(v)
+            toR.append(k)
+    for k in toR:del MM[k]
+    toR=[]
+    print('Досохранение except:')
+    doc=fitz.open()
+    docName=f'{join(ofld,"except")}.pdf'
+    #WMdocByHn = {}
+    for mmm in ToBad:
+        try:
+            if mmm.Hn not in WMdocByHn:
+                WMdocByHn[mmm.Hn] = fitz.open(rname[mmm.Hn])
+        except Exception as z:
+            raise(z)
+        fromTo(WMdocByHn[mmm.Hn],-1,docName,mmm,doc)
+        None
+    savepdfW(doc,docName)
+
+
+    
+    
+    
     # привет 202№!  тахионы ушли в путь
-    class sameELS():
+    class sameBy():
         def __init__(self):
             self.wl,self.ml,self.pairs=list(),list(),list()
+        def __repr__(self):
+            def slPg(lPg): return (f'{i:05}:{pg}'for i,pg in enumerate(lPg))
+            def tS(lPg):return '\n'.join(slPg(lPg))
+            lwl,lml,lp=len(self.wl),len(self.ml),len(self.pairs)
+            h=f'{lwl=},{lml=},{lp=}'
+            return f'hhh{h}\nWL({lwl}):\n{tS(self.wl)}\nM\
+                L({lml}):\n{tS(self.ml)}\nPr({lp}):\n{tS(self.pairs)}\n{h}\nhhh'
     class posOfVinLwhat():
         def __init__(self,pos=0,typeL='_'):
             self.pos,self.t=pos,typeL #'wwm'.find(typeL)
     def Harvest(WW,MM):
-        byEls=defaultdict(sameELS)
+        byEls=defaultdict(sameBy)
         for k, v in WW.items():
             byEls[v.els].wl+=[v]
         for k, v in MM.items():
@@ -294,13 +327,57 @@ def buildDSmakingCake(WW, MM, ofld):
                     break
             else:
                 cur.ml += [v]
+        Eels=['']
         for k, cur in byEls.items():
             if not k:
+                if k not in Eels:Eels.append(k)
                 continue
-            while cur.wl and cur.ml:
+                #тут (без елсное)
+                #можно тестануть сшивку по getNormAdr(strOfAdr,WT=1) and getNormAdr(strOfAdr,MK=1)
+            #while cur.wl and cur.ml:
+            if len(cur.wl)==1 and len(cur.ml)==1: 
+                #Случай остаток не сшитого по фио ровно по одной воды и мэка 
+                #временное уменьшее возможно ложных сшитий 
+                # (TOD) как критерий площадь или нормированные адреса
                 cur.pairs +=[[cur.wl.pop(0),cur.ml.pop(0)]] #  не оптимально ибо с головы 
+        ####
+            # if cur.wl:byEls[Eels[-1]].wl.extend(cur.wl);cur.wl=[] #1.0
+            # if cur.ml:byEls[Eels[-1]].ml.extend(cur.ml);cur.ml=[] #1.1
+        ####
+            # ^ И ^^ перелив квитанций с бесполезными елс в безелесное
+            # ^^^ технически можно сразу в byNormiAdr
+        if False: #тестовая стата lg_mar29_!_09_eELS2
+            if Eels[1:]or 1:print(f'DBbl:{Eels=}')
+            import pprint
+            for i,e in enumerate(Eels):
+                print(f'Eels[{i}]=="{e}"')
+                pprint.pprint(byEls[e])
+            sys.exit(0)
+       
+       ####
+        # byNormiAdr=defaultdict(sameBy)
+        # Frm=byEls['']
+        # def getNormAdr(inAdr,WT=1,MK=0):
+        #     return inAdr #ту(cу)дыть двигло NormiW.py
+        # g=getNormAdr
+        # for  v in Frm.wl:byNormiAdr[g(v.adr)].wl+=[v];Frm.wl=[]
+        # for  v in Frm.ml:#byNormiAdr[g(v.adr)].ml+=[v];Frm.ml=[]
+        #     ost=[] NorA=g(v.adr)
+        #     if Nor
+        #####
+            
+
+        #сшиваем(и вкидываем обратно в ByEls???- неа просто chain- неа ибо обход воды рыскает в ByЕls - можно конечно селектируя на что похож ключ(если в чейне туплить) смотреть как в ByEls так и в ByNormiAdr - тадыть его нуна в bdB вертать ) "безелсные по (normAdr,fio,sq) WM"#ололо 
+        
+        
+        #сшиваем "безелсные по (normAdr,fio) WM"#
+        #сшиваем "безелсные по (normAdr,fio) WM"#
+        
+        
+        
+        
         v2posInl=defaultdict()#posOfVinLwhat)#make v2posInL great again:
-        for k,cur in byEls.items(): #потом(очень потом)- слоты и индексы wl 0 wm-pairs 1  ml 2 
+        for cur in byEls.values(): #потом(очень потом)- слоты и индексы wl 0 wm-pairs 1  ml 2 
             for i,v in enumerate(cur.wl,0):
                 v2posInl[v]=posOfVinLwhat(i,'w')
             for i,v in enumerate(cur.ml,0):
@@ -369,19 +446,27 @@ def buildDSmakingCake(WW, MM, ofld):
             PosInWmz=cur_wmz.index(el[1].pN)
             if cur_wmz[PosInWmz-1]<0: #случай первого в файле == PozInWmz==1
                 for i in range(el[1].pN):
-                    if(mm:=cur_all[i]): # and while mm.pN<el[1].pN
-                        ou.wm.append([0,mm]);ou.cs[0]+=1
+                    try:
+                        if(mm:=cur_all[i]): # and while mm.pN<el[1].pN
+                            if not mm.isBad:
+                                ou.wm.append([0,mm]);ou.cs[0]+=1
+                    except Exception as e:
+                        print(f'shutout1{e=}{i=}{el=}')
             ou.wm.append(el)
             RightEdge=cur_wmz[PosInWmz+1]
             i=el[1].pN+1
             while i<RightEdge:
-                if(mm:=cur_all[i]): # and while mm.pN<el[1].pN
-                    ou.wm.append([0,mm]);ou.cs[0]+=1
+                try:
+                    if(mm:=cur_all[i]): # and while mm.pN<el[1].pN
+                        if not mm.isBad:
+                            ou.wm.append([0,mm]);ou.cs[0]+=1
+                except Exception as e:                    #raise(e) #???
+                    print(f'shutout2{e=}{i=}{el=}')
                 i+=1
         ou.weight[0] =len(ou.wm);#== sum(ou.cs)   # число листов
     #дописываем незацепленные Meк к Wlst
     IslandMek=[Hn for Hn in MekAmbit.keys() if len(MekAmbit[Hn]['wmz'])==2]
-    print("Незацпленные  МЭК-файлы:",len(IslandMek))
+    print("Незацепленные  МЭК-файлы:",len(IslandMek))
     pprint.pprint(IslandMek,width=99999999)
     for Hn in IslandMek:
         if (vHn := Hn) not in Wlst: #usedWnames:
