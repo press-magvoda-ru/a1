@@ -1,10 +1,9 @@
 ﻿import logging,sys,re,io   #logger =logging.getLogger(__name__)
 def print_to_string(*args, **kwargs):
-    output = io.StringIO()
-    print(*args, file=output, **kwargs,end='')
-    contents = output.getvalue()
-    output.close()
-    return contents
+    kwargs['end']=kwargs.get('end','')#TODOne
+    with io.StringIO() as out:
+        print(*args, file=out, **kwargs)
+        return out.getvalue() 
 
 from collections import Counter #Pg = namedtuple('Pg', 'pN Hn u els pa sq adr UrFcs Deliv')
 def StructFromFile(path):   return eval(open(path).read())    #"""TODO import ast;ast.literal_eval"""
@@ -31,9 +30,9 @@ toTown=set(i[0] for i in (('п Дзержинского', 1439),('п Димит�
 ('п Первомайский', 102),('п Супряк', 99),('п Молодежный', 78),('п Надежда', 76),))
 toSave=set(i[0] for i in (('тер. СНТ Энергетик', 448),('п Новоянгелька', 223),('п Озерный', 166),('п Муравейник', 117),('п Куйбас', 92),('с Агаповка', 85),('п Ближний', 71),
 ('сад Забота', 35),('тер. СНТ Лазурный', 16),('нп 2 Плотина', 4),('Красная Башкирия', 3),('р-н Агаповский', 2),('тер. СНТ Металлург-9', 1)))
-KVdelim=':';KOMdelim='/';delim=f'г{fldD}Магнитогорск'    #если s==aFb где F=f'г{fldD}Магнитогорск' то s=Fb :
+KVdelim=':';KOMdelim='/';    #если s==aFb где F=f'г{fldD}Магнитогорск' то s=Fb :
 nFor=[];NUiKva=[];
-
+def t1dtL(t0tL):return f'{t0tL[-1]}.{t0tL[0]}'
 #def out_el(el):print(f"[{el[0]:02},{el[1]},{el[2]},],")
 sh=[15,48,15,44,0]; SfxBld=[];  SfxKva=[]
 valueDelimType='!'
@@ -43,6 +42,12 @@ def pad(st:str,width:int,ch=valueDelimType):
     if width<0:width=max(-5,width)
     return st.rjust(abs(width),ch)   if width<0 else st.ljust(width,ch)
 class NormiAdr():
+    def smpl(s):#sgml :)
+        bld=(s.bld[0]+s.bld[1],s.bld[2])
+        return ','.join([
+            s.city,t1dtL(s.street),
+            t1dtL(bld),t1dtL(s.app),
+        ])
     def setself(self,inp,i,wrong,normi,tks):
         self.inp,self.i,self.wrong,self.normi,self.tks=inp,i,wrong,normi,tks
         self.set_out_adrflds()
@@ -51,17 +56,19 @@ class NormiAdr():
     def er(self):   print(self.wrong,self.mk_el(),file=sys.stderr)
     def curFld(self):   return restoreFld(self.tks[0])
     def __init__(self,inp:str,Tp='W',i=0,) -> None:
-        self.T=Tp #'M'if isM else 'W' #'M' if isM else 'W' if isW else 'U'
-        isM=Tp=='M'
-        isW=Tp=='W'
         global fldD,MustZ
+         #'M'if isM else 'W' #'M' if isM else 'W' if isW else 'U'
+        self.T=Tp;  normi=[];   isM=Tp=='M';    isW=Tp=='W'
         fldD=bsD if isW else ' ';
-        normi=[]
+        delim=f'г{fldD}Магнитогорск'
         def tonormi(tks,lvlUk=0): normi.append(normFld(tks[0]));return tks[1:]# curFld)        
-
+        
         while ~inp.find(', ,'): inp=inp.replace(', ,',',')
         inp=inp.strip(',').strip('.'); 
         ~inp.find(delim) and (inp:=''.join(inp.partition(delim)[1:])) # всё что левее г?Магнитогорск
+        ~inp.find(',  Тагильская,')and(inp:=inp.replace(',  Тагильская,',', ул Тагильская,',1))#см МЕМО_№1
+        ~inp.find(', в районе у')and(inp:=inp.replace(', в районе у',', у',1)) #', в районе ул. Лихачева, д.15, кв.0']
+        ~inp.find(', зем.участки п.')and(inp:=inp.replace(', зем.участки п.',', п.',1)) #см МЕМО_№2
 
         tks=[e.strip().split(fldD)for e in inp.split(',')] #glob , in rec FldD {W:'.', M:' '}
         while tks and tks[0].__len__()==1:
@@ -74,6 +81,9 @@ class NormiAdr():
         if (curFld:=restoreFld(tks[0])) in underTown:
             tks[0:0]=[delim.split(fldD)];curFld=delim
         elif curFld in toTown:
+            #MEMO_№1 случаи M ['п Дзержинского,  Тагильская, д. 2 С','п Дзержинского,  Тагильская, д. 3''п Дзержинского,  Тагильская, д. 5''п Дзержинского,  Тагильская, д. 7', 'п Дзержинского,  Тагильская, д. 19']
+            #туда сюда - на сырой строке в начале проще
+            #MEMO_№2 случаи W ['г.Магнитогорск, зем.участки п.Звездный, д.137 уч, кв.0','г.Магнитогорск, зем.участки п.Звездный, д.332 уч, кв.0','г.Магнитогорск, зем.участки п.Звездный, д.360 уч, кв.0','г.Магнитогорск, зем.участки п. Молодежный, д.33/1 уч., кв.0']
             tks[0]=delim.split(fldD);curFld=delim
         
         if tks[0][0] in lvl[Tp][0]: 
@@ -126,8 +136,8 @@ class NormiAdr():
             if isM:
                 curFld=restoreFld(tks[0]).replace('кв.','кв',1)
                 hd=tks[0]=curFld.split(fldD)# hd[0]=hd[0].replace('кв.','кв',1)
-            if isW and len(hd)==1 and hd[0].isdigit():  hd[0:0]=['кв']#21 случай из nFor024.7
-            if isW and( curFld:=restoreFld(tks[0])) in {'б/н','кв.б/н','кв.0',}:tks[0]=[curFld:='']
+            if (isW or isM) and len(hd)==1 and hd[0].isdigit():  hd[0:0]=['кв']#21 случай из nFor024.7 и 5 M ['г Магнитогорск, ул Лучезарная, д. 32 /1, 12','г Магнитогорск, ул Красный Маяк, д. 57,'г Магнитогорск, ул Красный Маяк, д. 57, 2','п Горького, ул Одесская, д. 31, 1','п Горького, ул Одесская, д. 31, 2']
+            if (isW or isM) and( curFld:=restoreFld(tks[0])) in {'б/н','кв.б/н','кв.0',}:tks[0]=[curFld:='']
             elif tks[0][0]!='кв':
                 return self.setself(inp,i,f"nonForward ква{len(nFor):03}:",normi,tks)
             if ~curFld.find('-'):# 9 случаев из Тыранга09.004.0
@@ -162,18 +172,24 @@ class NormiAdr():
         normi=self.normi
         self.city=(normi[0] if normi else '').title()
         self.street=('','')
-        self.building=('','','')#self.buildingExt,
+        self.bld=('','','')#self.buildingExt,
         self.app=('','','')#self.appExt='','','','','',''
         self.tail=''
         if normi[1:]:
             tp,_,nm=normi[1].partition('.')
-            self.street=(nm.replace('.',' ').title(),tp) 
+            nm=nm.replace('.',' ').title()
+            #ибо: ('Им Газеты Правда_ул_W', 4114),('Имени Газеты Правда_ул_M', 3956),
+            # ...
+            nm={
+                'Им Газеты Правда':'Имени Газеты Правда',
+            }.get(nm,nm)
+            self.street=(nm,tp) 
         if normi[2:]:
             tp,_,FullNum=(normi[2]).lower().partition('.')
             Num=re.search(r'\d+', FullNum).group()
             Sfx=FullNum[len(Num):]
             #if Sfx[:1]!='/':Sfx=f' {Sfx}' # что бы Буквы раньше дробей но теперь просто дома после
-            self.building=(Num,Sfx,tp)
+            self.bld=(Num,Sfx,tp)
             #if(toSfxBld:=len(rez)>sh[l]):  SfxBld.append([len(rez),rez])
         if normi[3:]:
             #if normi[l]in['кв.СОИ','кв.А']:#пилАть,            normi[l]='кв.0СОИ'
@@ -193,21 +209,21 @@ class NormiAdr():
     def __repr__(self):return str(self)
     def getCor(s,key=''):
         return s.wrong,s.city,s.street[0],s.street[1],\
-            pad(s.building[0],-4),s.building[1],\
+            pad(s.bld[0],-4),s.bld[1],\
             pad(s.app[0],-4),s.app[1],s.T
     def __lt__(s,o):
         return s.getCor()<o.getCor()
     def mk_el(self): 
         normi,i,inp=self.normi,self.i,self.inp
         #toSfxBld=0;toSfxKva=0 #normi=normi[:]#локализация
-        Renorm=[]#можно и без хвостования чисто двигай границу
+        Renorm=[self.smpl()+':сОви:']#можно и без хвостования чисто двигай границу
         if normi[(l:=0):]:#населённый пункт
             Renorm.append(self.city)
         if normi[(l:=l+1):]:#@улица@
             nm,tp=self.street
             Renorm.append('<'.join([pad(nm,40),pad(tp,7)]))
         if normi[(l:=l+1):]:#домо
-            Num,Sfx,tp=self.building
+            Num,Sfx,tp=self.bld
             Renorm.append(''.join([pad(Num,-4,'0'),pad(Sfx,8,"!"),f'<<{tp}']))
         if normi[(l:=l+1):]:#квартирно
             #if normi[l]in['кв.СОИ','кв.А']:#пилАть,            normi[l]='кв.0СОИ'
@@ -276,7 +292,7 @@ def main(w=[],m=[]):
     #print('*\n*\nГрёб уч:',*Uch,sep=',\n',file=sys.stderr)
     #print(f'*\n*\nХвостанутое({len(Tails)}):',*Tails,sep=',\n',file=sys.stderr)
 
-    print(f'*\n*\nплохГород({len(Niknight)}):',*Niknight,sep=',\n',file=sys.stderr)
+    #print(f'*\n*\nплохГород({len(Niknight)}):',*Niknight,sep=',\n',file=sys.stderr)
     print(f'*\n*\nНу и квашки({len(NUiKva)}):',*NUiKva,sep=',\n',file=sys.stderr)
     print(f'*\n*\nтыранги ква ком({len(Iranga)}):',*Iranga,sep=',\n',file=sys.stderr)
     print(f'*\n*\nогрызОЧКИ({len(OgryzkL)}):',*OgryzkL,sep=',\n',file=sys.stderr)
@@ -291,11 +307,18 @@ def main(w=[],m=[]):
 
     Niknight
 
-    print(*sorted(ur2.items()),sep=',\n',file=sys.stderr)
+    print(*(f'{print_to_string(e):^30}'for e in sorted(ur2.items())),file=sys.stderr)
        
 if __name__=='__main__':
-    w=StructFromFile(sys.argv[-1])
-    m=StructFromFile(sys.argv[-2])
+    iswm=sys.argv[1]=='iswm'
+    if iswm:
+        w=StructFromFile(sys.argv[-1])
+        m=StructFromFile(sys.argv[-2])
+        main(w,m)
+        sys.exit(0)     
+    
+    for a in sys.argv[1:]:
+        print(NormiAdr(a[1:],a[0]))
+
     #isW=len(sys.argv)==2;isM=not isW;
-    main(w,m)
     
