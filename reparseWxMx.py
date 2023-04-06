@@ -1,4 +1,5 @@
 from functools import lru_cache
+from NormiW import NormiAdr as SmplAdr  # (inStr).smpl()
 from collections import namedtuple
 import timing 
 from os.path import dirname, basename,join
@@ -6,7 +7,8 @@ from os import sep,walk
 from exceptlst import isBadMek
 # print('попячено из a1/splitingOfMandV.py  c дополнением лицевых и площади')
 # CluesOfPage('W',els,uuu,adr,src,pageNum,realuuu if realuuu!=uuu else ''))
-Pg = namedtuple('Pg', 'pN Hn u els pa sq adr UrFcs Deliv isBad')
+Pg = namedtuple('Pg', 'pN Hn u els pa sq adr adrNorm UrFcs Deliv isBad')
+useExceptlst=False
 
 bundle = namedtuple('bundle','m w P kvt sps tot')
 Deliveries='Па-чин&Азимут&Мой дом&ГКС МКД&Левицкая'
@@ -21,7 +23,7 @@ def lstInWithExtention(src,ext='.pdf',non='___'):
 
 def makeEmptyPg():
     #return Pg('','','','ПустоЛист','','','')
-    return Pg('','','','ПустоСтр','','','','','','') # возвращать Стр ибо сторона а не дубль- TODO посмотреть где используется литерал ПустоЛист    
+    return Pg('','','','ПустоСтр','','','','','','','') # возвращать Стр ибо сторона а не дубль- TODO посмотреть где используется литерал ПустоЛист    
 def PgIsEmpy(p:Pg):
     return p.els==''.join(p[2:-1]) #заморочка с int isBad
 
@@ -52,7 +54,7 @@ def Hn(path,Tp='M'):  # hash name from path ;#Tp  in ['M','W','R']
     if Tp=='W':
         rez = f"W-{'-'.join(dirname(path).split(sep)[-1].strip().replace('-',' ').split()[-2:])}"
         #собираем "хэш" от имени для различения файлов одного каталога (хз режут по 3000)
-        hsh='#'+''.join(w.strip()[0] for w in basename(path).split('.') if w.strip())[2:6]
+        hsh='_'+''.join(w.strip()[0] for w in basename(path).split('.') if w.strip())[2:6]
         rez+=hsh
     if Tp=='R': # cose avg(M,W)  or as same chr(((ord('M')+ord('W'))//2)
         rez = basename(path).split('$')[0].strip()
@@ -87,9 +89,10 @@ def prsM(page, file, pN):
             raise e
     else:
         adr = page.split('\n', 1)[0].strip() # сырой адрес МЭК
-    isBad=isBadMek(adr)
+    adrNorm=SmplAdr(adr, 'M').smpl()
+    isBad=useExceptlst and isBadMek(adr)
     if not (l := page.split('Лицевой счет:', 1)[1]):
-        return Pg(pN, file, '', '', '', '', adr, UrFcs, defMekDeliv,isBad)
+        return Pg(pN, file, '', '', '', '', adr, adrNorm,UrFcs, defMekDeliv,isBad)
     # print(l)
     pa = l.split('\n', 1)[0].strip()  # ''.join([e for e in l.split('\n',1)[0]
     Deliv=l.split('\n', 2)[1].strip()
@@ -100,7 +103,7 @@ def prsM(page, file, pN):
         :6].replace('.', '')  # ?method  remove all from {. }
     if (rez := timing.fltru(uuu)) != uuu:
         uuu = f'{rez}|{uuu}'
-    return Pg(pN, file, uuu, els, pa, sqS, adr, UrFcs, defMekDeliv,isBad)
+    return Pg(pN, file, uuu, els, pa, sqS, adr, adrNorm, UrFcs, defMekDeliv,isBad)
 _cache_ofprsW, b_c = {}, {ord(c): None for c in ' \xa0'}
 lX=0
 def prsW(page, src, pageNum):
@@ -144,7 +147,8 @@ def prsW(page, src, pageNum):
     if (rez := timing.fltru(uuu)) != uuu:
         uuu = f'{rez}|{uuu}'
     lX=0
-    return (_cache_ofprsW := Pg(pageNum, src, uuu, els, pa, sqS, adr, UrFcs, Deliv, 0))
+    adrNorm=SmplAdr(adr,'W').smpl()
+    return (_cache_ofprsW := Pg(pageNum, src, uuu, els, pa, sqS, adr, adrNorm, UrFcs, Deliv, 0))
 """ from splitingOfMandV last
 #CluesOfPage('W',els,uuu,adr,src,pageNum,realuuu if realuuu!=uuu else ''))
 CluesOfPage=namedtuple('PageClues','type els uuu adr src pageNum realuuu')

@@ -10,7 +10,7 @@ from reparseWxMx import Hn, Pg, bundle, add2Hn, DictFromFile, name2str, prsM, pr
 from itertools import chain
 from generXLS import makeXLS,typefilesOfdata
 import inspect; __LINE__ = inspect.currentframe()
-from exceptlst import Except
+#from exceptlst import Except
 print(__LINE__.f_lineno);print(__LINE__.f_lineno)
 #+1 or unk# +1 for de_ug purpose:
 inN, de_ug =os.cpu_count()+1, 0 #+1 #
@@ -70,10 +70,10 @@ def mainUI(in_srcM,in_srcW,in_fld):
                     join(fld, name2str(f'{rname=}')), 'w'), width=333)  # nero are
                 nm=WM_mergeFromMultiPagePdf(fld, fld, fld)
             else: # de_ug yap
-                rootTotS=r'C:\AAA\MWrez_2023-03-29__22-47-56' #r'C:\AAA\MWrez_2023-03-29__19-26-09'#r'c:\aaa\MWrez_2023-03-29__10-11-48' #r'C:\AAA\MWrez_2023-03-20__09-53-55' #r'C:\AAA\MWrez_2023-03-07__15-52-36' #r'C:\AAA\MWrez_2023-03-06__14-40-51' #r'C:\AAA\MWrez_2023-03-06__13-36-47' #r'C:\AAA\MWrez_2023-02-28__15-47-32' #r'C:\AAA\MWrez_2023-02-28__13-53-17' #r'C:\AAA\MWrez_2023-02-17__14-35-06' #r"C:\AAA\MWrez_2023-02-16__08-35-37" 
+                rootTotS=r'C:\AAA\MWrez_2023-04-06__13-10-57' #r'C:\AAA\MWrez_2023-04-06__11-43-38' #r'C:\AAA\MWrez_2023-04-05__16-26-04' #r'C:\AAA\MWrez_2023-04-05__13-59-22' #r'C:\AAA\MWrez_2023-03-29__22-47-56' #r'C:\AAA\MWrez_2023-03-29__19-26-09' #r'c:\aaa\MWrez_2023-03-29__10-11-48' #r'C:\AAA\MWrez_2023-03-20__09-53-55' #r'C:\AAA\MWrez_2023-03-07__15-52-36' #r'C:\AAA\MWrez_2023-03-06__14-40-51' #r'C:\AAA\MWrez_2023-03-06__13-36-47' #r'C:\AAA\MWrez_2023-02-28__15-47-32' #r'C:\AAA\MWrez_2023-02-28__13-53-17' #r'C:\AAA\MWrez_2023-02-17__14-35-06' #r"C:\AAA\MWrez_2023-02-16__08-35-37" 
                 nm=WM_mergeFromMultiPagePdf(rootTotS, rootTotS, fld)# de_ug of doubling All
             os.system(f'start "" "{nm[0]}"')
-            os.system(f'start "" "{nm[1]}"')
+            nm[1] and os.system(f'start "" "{nm[1]}"') #если wf is None 
             sys.exit()
     app = QtWidgets.QApplication(sys.argv)
     myWindow = mn_Window()
@@ -96,7 +96,7 @@ def weightMek(a):
         return 0         #TODO write in table bads of mek-file-pdf with massage
     print(f'!!!Файл:{a} из имени: {nm} по факту: {rl}  имя не != содержимому')
     return rl
-@lru_cache(maxsize=256)
+@lru_cache(maxsize=999)
 def pagesInPDF(a): return fitz.open(a).page_count
 Mpages2time = {n: (0.004+0.005/2000*n)*n for n in range(9999)};""" ... из предположения что удвоение учетверяет ( хотя по факту утраивает)\
     \n словарь/список (пока нет) с аппроксимацией - число_страниц_файла->время_на_файл :"""
@@ -217,7 +217,9 @@ def WM_mergeFromMultiPagePdf(srcW, srcM, outfld):
     return nm
 pdfnum = 0
 def bundlename(name,cs):#counters[m,w,wm]
-        kvt=sum(cs)+cs[-1]; tot=2*sum(cs);  sps=tot-kvt
+        kvt=cs[0]+cs[1]+2*cs[-1]; #== печатных страниц
+        tot=sum(cs)*(1+(1 if cs[-1] else 0))
+        sps=tot-kvt
         return f'{name[2:]} ${str(bundle(*cs,kvt,sps,tot)).replace(" ","")}'
 def savepdfW(doc, name):
     if (p := doc.page_count):
@@ -225,10 +227,10 @@ def savepdfW(doc, name):
         doc.save(name, garbage=2, deflate=True)
         pdfnum = pdfnum+1
         print(timing.log(f'№{pdfnum:>03}', name))
-def fromTo(src,pN,oname,x,dst):
+def fromTo(doEmpty,src,pN,oname,x,dst):
     if(src):
         dst.insert_pdf(src, from_page=x.pN, to_page=x.pN, links=0, annots=0, final=False)
-    else:
+    elif doEmpty:
         dst.new_page()
     return f"Pg{tuple(makeCurPg(pN,oname,x))}"#.replace(' ','')
 def makeCurPg(pN,oname,v):
@@ -237,6 +239,7 @@ def makeCurPg(pN,oname,v):
     t['pN'],t['Hn']=pN,oname,
     return Pg(*t.values())
 def inSubmergeW(prt, ofld, rname):
+    from NormiW import NormiAdr as forCMP
     pid = os.getpid()
     print(f'>>WW from {prt.index} {os.getpid()} {os.getcwd()}')
     WMdocByHn = {}
@@ -250,21 +253,27 @@ def inSubmergeW(prt, ofld, rname):
         pagestxt = open(onameBnd, 'w')
         pN,inp =-1,fitz.open(rname[Hn]) #;counters=[0,0,0]
         pagestxt.write('[\n');  out=fitz.open()
+        e.wm[:]=sorted(e.wm,key=lambda l:l[0] and forCMP(l[0].adr) or forCMP(l[1].adr,'M')) #lol всёж adr f а не adrNorm
+        l,r,=0,0
+        for x,y in e.wm:
+            if x:l+=1
+            if y:r+=1
+        
         for x,y in e.wm:
             t=[]
-            if not x:
-                t.append(fromTo(0,pN:=pN+1,onamePdf,ePg,out))#x and inp,pN,onamePdf,x or ePg,out
+            if  x:
+                t.append(fromTo(l,inp,pN:=pN+1,onamePdf,x,out))
             else:
-                t.append(fromTo(inp,pN:=pN+1,onamePdf,x,out))
-            if not y:
-                t.append(fromTo(0,pN:=pN+1,onamePdf,ePg,out))
-            else:
+                t.append(fromTo(l,0,pN:=pN+1,onamePdf,ePg,out))#x and inp,pN,onamePdf,x or ePg,out
+            if  y:
                 try:
                     if y.Hn not in WMdocByHn:
                         WMdocByHn[y.Hn] = fitz.open(rname[y.Hn])
                 except Exception as z:
                     raise(z)
-                t.append(fromTo(WMdocByHn[y.Hn],pN:=pN+1,onamePdf,y,out))
+                t.append(fromTo(r,WMdocByHn[y.Hn],pN:=pN+1,onamePdf,y,out))
+            else:
+                t.append(fromTo(r,0,pN:=pN+1,onamePdf,ePg,out))
             #counters[2*int(bool(x))+int(bool(y)-1)]+=1
             pagestxt.write('[')
             print(*t,sep=',',end='],\n',file=pagestxt)#.write(f"{str(t).replace(' ','')},\n") #lol
@@ -292,7 +301,7 @@ def buildDSmakingCake(WW, MM, ofld):
                 WMdocByHn[mmm.Hn] = fitz.open(rname[mmm.Hn])
         except Exception as z:
             raise(z)
-        fromTo(WMdocByHn[mmm.Hn],-1,docName,mmm,doc)
+        fromTo(1,WMdocByHn[mmm.Hn],-1,docName,mmm,doc)
         None
     savepdfW(doc,docName)
 
@@ -314,7 +323,7 @@ def buildDSmakingCake(WW, MM, ofld):
     class posOfVinLwhat():
         def __init__(self,pos=0,typeL='_'):
             self.pos,self.t=pos,typeL #'wwm'.find(typeL)
-    def Harvest(WW,MM):
+    def HarvestbByEls(WW,MM):
         byEls=defaultdict(sameBy)
         for k, v in WW.items():
             byEls[v.els].wl+=[v]
@@ -353,7 +362,7 @@ def buildDSmakingCake(WW, MM, ofld):
                 print(f'Eels[{i}]=="{e}"')
                 pprint.pprint(byEls[e])
             sys.exit(0)
-       
+     
        ####
         # byNormiAdr=defaultdict(sameBy)
         # Frm=byEls['']
@@ -365,19 +374,32 @@ def buildDSmakingCake(WW, MM, ofld):
         #     ost=[] NorA=g(v.adr)
         #     if Nor
         #####
-            
-
         #сшиваем(и вкидываем обратно в ByEls???- неа просто chain- неа ибо обход воды рыскает в ByЕls - можно конечно селектируя на что похож ключ(если в чейне туплить) смотреть как в ByEls так и в ByNormiAdr - тадыть его нуна в bdB вертать ) "безелсные по (normAdr,fio,sq) WM"#ололо 
-        
-        
         #сшиваем "безелсные по (normAdr,fio) WM"#
         #сшиваем "безелсные по (normAdr,fio) WM"#
-        
-        
-        
-        
+        return byEls
+
+    def HarvestByAdr(WW,MM):
+        byAdr=defaultdict(sameBy)
+        for k, v in WW.items():
+            byAdr[v.adrNorm].wl+=[v]
+        for k, v in MM.items():
+            cur = byAdr[v.adrNorm]
+            #if (not v.adr): cur.ml += [v]; continue
+            for i,e in enumerate(cur.wl): # единичное поэтому без lst =cur.wl.copy()
+                if e.u == v.u: # пока инициалов достаточно 
+                    cur.pairs += [[cur.wl.pop(i),v]] 
+                    break
+            else:
+                cur.ml += [v]
+        for k, cur in byAdr.items():
+            if len(cur.wl)==1 and len(cur.ml)==1: 
+                cur.pairs +=[[cur.wl.pop(0),cur.ml.pop(0)]] #  не оптимально ибо с головы 
+        return byAdr
+
+    def genv2posInl(bySmthg):
         v2posInl=defaultdict()#posOfVinLwhat)#make v2posInL great again:
-        for cur in byEls.values(): #потом(очень потом)- слоты и индексы wl 0 wm-pairs 1  ml 2 
+        for cur in bySmthg.values(): #потом(очень потом)- слоты и индексы wl 0 wm-pairs 1  ml 2 
             for i,v in enumerate(cur.wl,0):
                 v2posInl[v]=posOfVinLwhat(i,'w')
             for i,v in enumerate(cur.ml,0):
@@ -385,8 +407,9 @@ def buildDSmakingCake(WW, MM, ofld):
             for i,v in enumerate(cur.pairs,0):
                 v2posInl[v[0]]=posOfVinLwhat(i,'wm')
                 v2posInl[v[1]]=posOfVinLwhat(i,'wm')
-        return byEls,v2posInl
-    bdB,v2posInl, = Harvest(WW,MM)
+        return v2posInl
+    
+    v2posInl = genv2posInl(bdB:=(HarvestByAdr if (useAdr:=1) else HarvestbByEls)(WW,MM))
 
     print(timing.log('3', "Построение словаря елс'ок с парнованием ежель чё"))
     for Hn, fullpath in rname.items():
@@ -413,7 +436,7 @@ def buildDSmakingCake(WW, MM, ofld):
             Wlst[vHn]=Wshort([0], vHn, [], [],[0,0,0]) # cs is m,w,P
             z = WbyM[vHn] = {'c': 0, 'b': 0, 'S': defaultdict(int), }
         ou = Wlst[vHn]  # ибо квитанции воды идут подряд пофайлово
-        (cur := bdB[v.els])
+        (cur := bdB[v.adrNorm] if useAdr else bdB[v.els])
         if (pos:=v2posInl[v]).t=='wm': #in pairs    
             www, mmm = cur.pairs[pos.pos]
             ou.w.append([www, mmm]);ou.cs[2]+=1 
@@ -510,6 +533,7 @@ def buildDSmakingCake(WW, MM, ofld):
     unk=join(unk,'');os.system(f'del "{unk}*{typefilesOfdata}"')
     print(timing.log('4_E', "Отсохронялись"))
     return rez
+
 if __name__ == '__main__':
     mp.freeze_support()
     root = rezname.getArgOr(1, dirname(dirname(__file__)), 'Dir')

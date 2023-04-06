@@ -31,7 +31,7 @@ toTown=set(i[0] for i in (('п Дзержинского', 1439),('п Димит�
 toSave=set(i[0] for i in (('тер. СНТ Энергетик', 448),('п Новоянгелька', 223),('п Озерный', 166),('п Муравейник', 117),('п Куйбас', 92),('с Агаповка', 85),('п Ближний', 71),
 ('сад Забота', 35),('тер. СНТ Лазурный', 16),('нп 2 Плотина', 4),('Красная Башкирия', 3),('р-н Агаповский', 2),('тер. СНТ Металлург-9', 1)))
 KVdelim=':';KOMdelim='/';    #если s==aFb где F=f'г{fldD}Магнитогорск' то s=Fb :
-nFor=[];NUiKva=[];
+nFor=[];NUiKva=[];Niknight=[];HsForsaken=[]
 def t1dtL(t0tL):return f'{t0tL[-1]}.{t0tL[0]}'
 #def out_el(el):print(f"[{el[0]:02},{el[1]},{el[2]},],")
 sh=[15,48,15,44,0]; SfxBld=[];  SfxKva=[]
@@ -69,6 +69,8 @@ class NormiAdr():
         ~inp.find(',  Тагильская,')and(inp:=inp.replace(',  Тагильская,',', ул Тагильская,',1))#см МЕМО_№1
         ~inp.find(', в районе у')and(inp:=inp.replace(', в районе у',', у',1)) #', в районе ул. Лихачева, д.15, кв.0']
         ~inp.find(', зем.участки п.')and(inp:=inp.replace(', зем.участки п.',', п.',1)) #см МЕМО_№2
+        #тер. СНТ Энергетик, д. 108 /, кв'
+        inp.endswith('кв')and(inp:=','.join(inp.split(',')[:-1]))#(inp:=inp[:-2])#(inp:=inp+f'{fldD}0')
 
         tks=[e.strip().split(fldD)for e in inp.split(',')] #glob , in rec FldD {W:'.', M:' '}
         while tks and tks[0].__len__()==1:
@@ -78,6 +80,7 @@ class NormiAdr():
                 return self.setself(inp,i,'всяко НЕ индекс',normi,tks)
         
         #уровень населённый пунт:
+        realNasP=tks[0]
         if (curFld:=restoreFld(tks[0])) in underTown:
             tks[0:0]=[delim.split(fldD)];curFld=delim
         elif curFld in toTown:
@@ -89,14 +92,21 @@ class NormiAdr():
         if tks[0][0] in lvl[Tp][0]: 
             tks=tonormi(tks)
         else:
-            return self.setself(inp,i,"всяко НИ(рыцар)Городок",normi,tks)
+            tks=tonormi(tks)
+            #return self.setself(inp,i,f"ДруГо{len(Niknight):04}",normi,tks)
         #1протяжённость(линии-улицы и пр ЛИБО "комплекс"(пос с домами и прочая нумерная )
         #byLvlStr[curFld:=restoreFld(tks[0]) ]+=1 # подсчёт и узнавание какие есть дома аж улицы
+        
         if tks[0][0]=='д.':
-            return self.setself(inp,i,"дома уличные сИротные",normi,tks)
+            #return self.setself(inp,i,f"безУлич{len(HsForsaken):05}",normi,tks)
+            tks[0:0]=[['ш',' '.join(['Ядом',*realNasP])]]
+            None
         if tks[0][0] in lvl[Tp][1]: tks=tonormi(tks)
-        else:
-            return self.setself(inp,i,"что за огрызок",normi,tks)
+        else:#"временное"  офиктиченье улицами переферийных адресов если потребно
+            curFld='ул '+restoreFld(tks[0]);  #44 случая
+            tks[0]=curFld.split(fldD)
+            tks=tonormi(tks)
+            #return self.setself(inp,i,"что за огрызок",normi,tks)
             
         if tks:#добор дома
             curFld=restoreFld(tks[0])
@@ -131,8 +141,14 @@ class NormiAdr():
             tks=[' '.join(' '.join(l) for l in tks).split()]
             curFld=restoreFld(tks[0]).replace('пом ','пом.',1).replace('кв.пом.','кв.',1)
             hd=tks[0]=curFld.split(fldD)
-            if hd[0]=='пом':hd[0]='кв'
+            if hd[0]in ['пом','блок']:hd[0]='кв'
             #if isM and ~hd[0].find('кв.']:hd[0]=hd[0][:-1] #ХЗ ['asdf'] а не просто 'asdf'!!!!нонХЗ
+            
+            if (p:=curFld.find('кв'))>0: #часть "суфикса"(при перечислении домов) заехало в секцию квартир, случаи W:  'г.Магнитогорск, ул.Костромская, д.484,2 уч, кв.0', 'г.Магнитогорск, п.Зеленая Долина, д.уч 91, 92, кв.0'
+                add,kv,curFld=curFld.partition(f'кв') # по условию add очевидно не пусто (да и не набор пробельных Imho - мыж пострипили  ведь да!? )
+                normi[-1]+=f'*{add[:-1].replace(bsD," ")}'
+                hd=tks[0]=(curFld:=kv+curFld).split(fldD)
+                None
             if isM:
                 curFld=restoreFld(tks[0]).replace('кв.','кв',1)
                 hd=tks[0]=curFld.split(fldD)# hd[0]=hd[0].replace('кв.','кв',1)
@@ -161,6 +177,7 @@ class NormiAdr():
                 tks[0]=Kvs.split(fldD)
                 if Koms:tks[0][-1]+=f'|;{Koms}'
             if len(tks[0])!=2 and curFld!='':
+                
                 return self.setself(inp,i,f"ну и ква{len(NUiKva):03}:",normi,tks)
             if tks[0]:tks=tonormi(tks)
             elif tks[0]=='':tks=tks[1:]
@@ -247,7 +264,7 @@ def main(w=[],m=[]):
     #byLvlStr=Counter(); #Tails=[];
     tpStr=Counter();HsLong=Counter();SlashWithoutSpace=Counter();HouseNotHouse=[];
     ur2=Counter();    Uch=[];
-    Iranga=[];OgryzkL=[];NONEIND=[];Niknight=[]
+    Iranga=[];OgryzkL=[];NONEIND=[];
     er=[0];nor=[0];ukv=0;tls=0
     def InserterList(v,Tp,out):
         for i,inp in v:
@@ -257,11 +274,12 @@ def main(w=[],m=[]):
                 out.append(x);nor[0]+=1
             elif x.wrong=='всяко НЕ индекс':
                     NONEIND.append([i,x.inp,x.mk_el()]);    er[0]+=1;continue
-            elif x.wrong=="всяко НИ(рыцар)Городок":
+            elif x.wrong.startswith("ДруГо"):
                     nonCity[restoreFld(x.tks[0])]+=1;
                     Niknight.append(x.mk_el()); er[0]+=1;continue
-            elif x.wrong=="дома уличные сИротные":
-                    nonStreetsHs[restoreFld(x.tks[0])]+=1;        er[0]+=1;continue
+            elif x.wrong.startswith("безУлич"):
+                    nonStreetsHs[restoreFld(x.tks[0])]+=1;
+                    HsForsaken.append(x.mk_el()); er[0]+=1;continue
             elif x.wrong=="что за огрызок":
                     Ogryzk[restoreFld(x.tks[0])]+=1;tpStr[x.tks[0][0]]+=1
                     OgryzkL.append([i,inp,x.mk_el()]);  er[0]+=1;continue
@@ -270,13 +288,14 @@ def main(w=[],m=[]):
             elif x.wrong.startswith("nonForward ква"):
                     nFor.append(x.mk_el()); continue
             elif x.wrong.startswith("ну и ква"):
-                    NUiKva.append(x.mk_el());  ukv+=1;continue
+                    NUiKva.append(x.mk_el());continue
             pass
     InserterList(w,'W',rez);
     InserterList(m,'M',rez);
 
     print("['00'",*sorted(rez),']',sep=',\n')
-    print(f"['99',{len(Niknight)=} {sh=}{len(Iranga)=}, {tls=}, {len(NUiKva)=}, {len(nFor)=}, {ukv=},{nor=}, {er=}, {MustZ=}, {nonCity=},{len(HouseNotHouse)=},{len(Uch)=}],")
+    sh=''
+    print(f"['99',{nor=} + {er=}=[{len(Niknight)=}+{len(HsForsaken)=}], {sh=}{len(Iranga)=}, {tls=}, {len(NUiKva)=}, {len(nFor)=}, {ukv=},{MustZ=}, {nonCity=},{len(HouseNotHouse)=},{len(Uch)=}],")
     pes=',\t' ##',\n'
     print(*sorted(nonCity.items(),key=lambda x:-x[1]),sep=pes,file=sys.stderr)
     #print('*\n*\nАлфавитно:',*sorted(byLvlStr.items()),sep=pes,file=sys.stderr)
