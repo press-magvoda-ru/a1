@@ -121,7 +121,9 @@ def mainXLSsheetAndFresh(mnL, wb,wf): ## пока один поток сбора
             putAndPgTot(c:=c+1,"W-площадь", isFst);
             putAndPgTot(c:=c+1,"W-ФИО", isFst);
             putAndPgTot(c:=c+1,"W-ЕЛС", isFst);
-    
+            putAndPgTot(c:=c+1,"W-adrNrm", isFst);
+            
+            putAndPgTot(c:=c+1,"M-adrNrm", isFst);
             putAndPgTot(c:=c+1,"M-ЕЛС", isFst);
             putAndPgTot(c:=c+1,"M-ФИО", isFst);
             putAndPgTot(c:=c+1,"M-площадь", isFst);
@@ -152,7 +154,9 @@ def mainXLSsheetAndFresh(mnL, wb,wf): ## пока один поток сбора
             (wSqsW := max(wSqsW, len(x.sq)))#)
             putAndPgTot(cuuuW:=(l := l+1), x.u)
             putAndPgTot(l := l+1, x.els)
+            putAndPgTot(l := l+1, x.adrNorm)
             z=y
+            putAndPgTot(l := l+1, z.adrNorm)
             putAndPgTot(l := l+1, z.els)
             putAndPgTot(cuuuM:=( l:= l+1), z.u)
             putAndPgTot(cSqsM:=(l := l+1), z.sq.rjust(wSqsM:=max(wSqsM,len(z.sq))))
