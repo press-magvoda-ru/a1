@@ -90,22 +90,29 @@ def mainXLSsheetAndFresh(mnL, wb,wf): ## пока один поток сбора
 
         r+=1
         for i in 'b':
-            putAndFrsh(1,f'толькоМЭК',isFst)
-            putAndFrsh(2,f'толькоВдТ',isFst) #
-            putAndFrsh(3,f'двухСторо',isFst)
-            putAndFrsh(4,f'стрСодерж',isFst)
-            putAndFrsh(5,f'стрПустых',isFst)
-            putAndFrsh(6,f'стрОбщее',isFst)
+            putAndFrsh(0,f'№ п/п',isFst)
+            putAndFrsh(1,f'Файл',isFst)
+            putAndFrsh(2,f'Количество листов только МЭК',isFst)    #putAndFrsh(1,f'толькоМЭК',isFst)
+            putAndFrsh(3,f'Количество листов без МЭК',isFst)    #putAndFrsh(2,f'толькоВдТ',isFst) #
+            putAndFrsh(4,f'Количество непустых страниц',isFst)    #putAndFrsh(4,f'стрСодерж',isFst)
+            putAndFrsh(5,f'Количество страниц всего',isFst)     #putAndFrsh(6,f'стрОбщее',isFst)
+            putAndFrsh(6,f'Количество пустых страниц',isFst)    #putAndFrsh(5,f'стрПустых',isFst)
+            putAndFrsh(7,f'Одностраничная печать',isFst)     #putAndFrsh(6,f'стрОбщее',isFst)
+            putAndFrsh(8,f'Двухстраничная печать',isFst)    #putAndFrsh(3,f'двухСторо',isFst)
+            putAndFrsh(9,f'Количество листов всего',isFst)     #putAndFrsh(6,f'стрОбщее',isFst)
+            
         r+=1
-        pgFrshR+=1; putPgToFrsh(1,pdfname)    
+        pgFrshR+=1; putPgToFrsh(1,fl); putPgToFrsh(2,pdfname)    
         for i in 'c':
-            putAndFrsh(1,f'{stat.m:^9}')
-            putAndFrsh(2,f'{stat.w:^9}')
-            putAndFrsh(3,f'{stat.P:^9}')
-            putAndFrsh(4,f'{stat.kvt:^9}')
-            putAndFrsh(5,f'{stat.sps:^9}')
-            putAndFrsh(6,f'{stat.tot:^9}')
-        
+            hh=stat.sps or stat.kvt 
+            putAndFrsh(2,f'={stat.m:^9}')
+            putAndFrsh(3,f'={stat.w:^9}')
+            putAndFrsh(4,f'={stat.kvt:^9}')
+            putAndFrsh(5,f'={stat.tot:^9}')
+            putAndFrsh(6,f'={stat.sps:^9}')
+            putAndFrsh(7,f'={hh:^9}')
+            putAndFrsh(8,f'={stat.P:^9}')
+            putAndFrsh(9,f'={hh+stat.P:^9}')
         #print(wb.sheetnames)
         #sheet.cell(row=(r := r+1), column=(c := 2)).value=f'{sp[-1]}:';wNums=len(sp[-1])+1
         
