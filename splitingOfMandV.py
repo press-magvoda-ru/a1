@@ -247,19 +247,48 @@ def inSubmergeW(prt, ofld, rname):
           f' '.join(f'{f.weight}'for f in prt.lst), end=' ENDWW\n')
     ePg=makeEmptyPg()  
     for e in prt.lst:  # e is namedtuple('Wshort', 'weight Hn wm w cs')
-        Hn=e.Hn;    
-        onamePdf=f'{join(ofld,Hn[2:])}.pdf'
+        Hn=e.Hn;    ewm=e.wm
+        kkey=lambda l:l[0] and forCMP(l[0].adr) or forCMP(l[1].adr,'M')
+        onamePdf=f'{join(ofld,rnm:=Hn[2:])}.pdf'
+        if rnm[0]=="№": #"Пач-ин" #!!! ориентир наличие № :) AZAZA
+            prf='000-'; onamePdf2=f'{join(ofld,prf+rnm)}.pdf'
+            def bld(s):return ','.join(s.smpl().split(',')[:3])
+            sG=set(bld(kkey(a))for a in ewm if a[0])
+            oldEwm=ewm;ewm=[];onlyMEK=[]
+            for a in oldEwm:
+                if bld(kkey(a))in sG:   ewm.append(a)
+                else:                   onlyMEK.append(a)
+            if onlyMEK:
+                r2=len(onlyMEK);e.cs[0]-=r2
+                onameBnd2=f'{join(ofld,prf+bundlename(Hn,[r2,0,0]))}{typefilesOfdata}'
+                pagestxt2 = open(onameBnd2, 'w')
+                pN2=-1
+                pagestxt2.write('[\n');  out2=fitz.open()
+                onlyMEK[:]=sorted(onlyMEK,key=kkey) #lol всёж adr f а не adrNorm
+                for x,y2 in onlyMEK:
+                    t2=[fromTo(0,0,pN2:=pN2+1,onamePdf2,ePg,out2)]#x and inp,pN,onamePdf,x or ePg,out
+                    try:
+                        if y2.Hn not in WMdocByHn:
+                            WMdocByHn[y2.Hn] = fitz.open(rname[y2.Hn])
+                    except Exception as z:
+                        raise(z)
+                    t2.append(fromTo(r2,WMdocByHn[y2.Hn],pN2:=pN2+1,onamePdf2,y2,out2))
+                    pagestxt2.write('[')
+                    print(*t2,sep=',',end='],\n',file=pagestxt2)#.write(f"{str(t).replace(' ','')},\n") #lol
+                savepdfW(out2, onamePdf2)
+                pagestxt2.write(']')
+                print(timing.log(f'{" ":<7}{pid:>5}', f'{pid:05}'), flush=True)
         onameBnd=f'{join(ofld,bundlename(Hn,e.cs))}{typefilesOfdata}'
         pagestxt = open(onameBnd, 'w')
         pN,inp =-1,fitz.open(rname[Hn]) #;counters=[0,0,0]
         pagestxt.write('[\n');  out=fitz.open()
-        e.wm[:]=sorted(e.wm,key=lambda l:l[0] and forCMP(l[0].adr) or forCMP(l[1].adr,'M')) #lol всёж adr f а не adrNorm
+        ewm[:]=sorted(ewm,key=kkey) #lol всёж adr f а не adrNorm
         l,r,=0,0
-        for x,y in e.wm:
+        for x,y in ewm:
             if x:l+=1
             if y:r+=1
         
-        for x,y in e.wm:
+        for x,y in ewm:
             t=[]
             if  x:
                 t.append(fromTo(l,inp,pN:=pN+1,onamePdf,x,out))
@@ -530,7 +559,8 @@ def buildDSmakingCake(WW, MM, ofld):
     getS(unk)
 
     rez=makeXLS(unk)
-    unk=join(unk,'');os.system(f'del "{unk}*{typefilesOfdata}"')
+    unk=join(unk,'');
+    os.system(f'del "{unk}*{typefilesOfdata}"')
     print(timing.log('4_E', "Отсохронялись"))
     return rez
 
