@@ -117,7 +117,9 @@ def prsW(page, src, pageNum):
         return (_cache_ofprsW:=makeFakeNxtPg(_cache_ofprsW))  # вероятней всего это выехавшее за 1 страницу примечание
     if src not in rname:
         src = Hn(src,'W')
+    dlg=''
     if page.startswith('Погасите'):
+        dlg='DLG '
         page=page.partition('\n')[2]
     page = page.replace('\xa0', ' ')
 
@@ -143,7 +145,7 @@ def prsW(page, src, pageNum):
                < 2 else v[1].split('\n', 1)[0].split()[0].replace(' ', ''))
     sqS.append('' if len(w := v[-1].split('Отапливаемая площадь:', 1))
                < 2 else w[1].split('\n', 1)[0].split()[0].replace(' ', ''))
-    sqS = sqS[0]+'|'+sqS[1]
+    sqS = dlg+sqS[0]+'|'+sqS[1]
     if (rez := timing.fltru(uuu)) != uuu:
         uuu = f'{rez}|{uuu}'
     lX=0
