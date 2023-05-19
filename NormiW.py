@@ -48,6 +48,7 @@ class NormiAdr():
             s.city,t1dtL(s.street),
             t1dtL(bld),t1dtL(s.app),
         ])
+    def blding(s):return ','.join(s.smpl().split(',')[:3])
     def setself(self,inp,i,wrong,normi,tks):
         self.inp,self.i,self.wrong,self.normi,self.tks=inp,i,wrong,normi,tks
         self.set_out_adrflds()
