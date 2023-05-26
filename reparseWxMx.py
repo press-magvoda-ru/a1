@@ -145,7 +145,19 @@ def prsW(page, src, pageNum):
                < 2 else v[1].split('\n', 1)[0].split()[0].replace(' ', ''))
     sqS.append('' if len(w := v[-1].split('Отапливаемая площадь:', 1))
                < 2 else w[1].split('\n', 1)[0].split()[0].replace(' ', ''))
-    sqS = dlg+sqS[0]+'|'+sqS[1]
+    #за воду: +3
+    #за тепло: -1
+    lns=page.split('\n')
+    llst=[(i,e)for i,e in enumerate(lns)if e.startswith('ВСЕГО К ОПЛАТЕ')]
+    def fnd(s):
+        for i,e in llst:
+            if ~e.find(s):return i
+        return 0
+    def getvalue(s,d): return lns[fld+d] if (fld:=fnd(s)) else ''
+    sqS[0]=getvalue('Водоканал',3)
+    sqS[1]=getvalue('Теплофикация',-1)
+
+    sqS = dlg+sqS[0]+' | '+sqS[1]
     if (rez := timing.fltru(uuu)) != uuu:
         uuu = f'{rez}|{uuu}'
     lX=0
