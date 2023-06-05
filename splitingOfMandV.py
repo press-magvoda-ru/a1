@@ -233,7 +233,7 @@ def inSubmergeW(prt, ofld, rname):
         Hn=e.Hn;    ewm=e.ll
         kkey=lambda l:l[0] and forCMP(l[0].adr) or forCMP(l[1].adr,'M')
         onamePdf=f'{join(ofld,rnm:=Hn[2:])}.pdf'
-        if rnm[0]=="№": #"Пач-ин" #!!! ориентир наличие № :) AZAZA
+        if rnm[0]in ["№","Г","У"]: #"Пач-ин" #!!! ориентир наличие № :) AZAZA
             prf='000-'; onamePdf2=f'{join(ofld,prf+rnm)}.pdf'
             sG=set(forCMP(a[0].adr).blding()for a in ewm if a[0])
             oldEwm=ewm;ewm=[];onlyMEK=[]
