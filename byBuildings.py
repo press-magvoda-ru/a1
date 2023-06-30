@@ -56,7 +56,7 @@ if __name__=='__main__':
     print(log(0,'start'))
     root = rezname.getArgOr(1, dirname(dirname(__file__)), 'Dir')
     #rname=DictFromFile(join(root,'rname'))
-    fld='MWrez_2023-02-09__16-47-53.striped'
+    fld= 'MWrez_2023-06-28__13-23-22'#'MWrez_2023-02-09__16-47-53.striped'
     WW = DictFromFile(join(root+fld, 'wTotB'))
     MM = DictFromFile(join(root+fld, 'mTotB'))
     grp=byBuildings(WW,MM,root)

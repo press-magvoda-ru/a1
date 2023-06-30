@@ -329,6 +329,13 @@ def buildDSmakingCake(WW, MM, ofld):
             if m.pN==0:     ouF=E[min(E.keys())] if(E:=mw[m.Hn])else m.Hn
             if E[m.pN]:     ouF=E[m.pN]
             if m not in U:                                  toOut(ouF,0,m,0)
+        
+        ff=open('B2ouf','w')    
+        for k in B2Ouf:
+            if len(zzz:=B2Ouf[k])>1:
+                print(f"Разнофайловый дом:{k:^77} файлы:{zzz}",file=ff)
+        print(f'{B2Ouf=}')
+        ff.close()
     HarvestByAdr(WW,MM)
     print(timing.log('3', "Построение листов"))
     #for Hn, fullpath in rname.items():  WMdocByHn[Hn] = fitz.open(fullpath)
