@@ -20,7 +20,11 @@ def mkmk(fld): # утилита для mainUI
     os.chdir(fld);    os.system(f'start "" "{fld}"')
 def mainUI(in_srcM,in_srcW,in_fld):
     from PyQt5 import QtWidgets, uic
-    frm_cls = uic.loadUiType(f"{os.path.dirname(__file__)}\guiForPairing.ui")[0]
+    try:
+        frm_cls = uic.loadUiType(f'{os.path.dirname(__file__)}\\guiForPairing.ui')[0]
+    except:
+        from guiForPairing import Ui_MainWindow as frm_cls
+
     class mn_Window(QtWidgets.QMainWindow, frm_cls):
         def __init__(self, parent=None):
             QtWidgets.QMainWindow.__init__(self, parent)
