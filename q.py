@@ -1,0 +1,2 @@
+import os.path
+print(os.path.basename(__file__).split('.')[0])

@@ -316,6 +316,7 @@ def buildDSmakingCake(WW, MM, ofld):
         B2Ouf=defaultdict(set); mw=defaultdict(lambda:defaultdict(int));  Adr=defaultdict(sameBy);  U=set()# квитанция размещена
         pH=join(os.environ('USERPROFILE'),'Desktop','Hints')
         uni=set();edges=defaultdict(set);bad=defaultdict(set)
+        new_edges=[]
         def getHints():
             os.makedirs(pH,exist_ok=1)
             if exists(fn:=join(pH,'Hints.txt')):
@@ -328,7 +329,9 @@ def buildDSmakingCake(WW, MM, ofld):
         def toOut(ouF,w,m,i=2):
             if ouF not in Wlst: Wlst[ouF]=Wshort(ouF, [], [0,0,0]) # [m,w,wm]
             F=Wlst[ouF];   
-            if w and m: F.ll[w.pN][1]=m;F.cs[1]-=1
+            if w and m: 
+                F.ll[w.pN][1]=m;F.cs[1]-=1
+                new_edges.append(f'{w.pa},{m.pa}')
             else:       F.ll.append([w,m])
             U.add(m); U.add(w); F.cs[i]+=1             
             if m:mw[m.Hn][m.pN]=ouF
@@ -337,13 +340,16 @@ def buildDSmakingCake(WW, MM, ofld):
         for w in WW.values():
             toOut(w.Hn,w,0,1); 
             B2Ouf[forCMP(w.adr).blding()].add(w.Hn)
-            if w.pa not in uni:
+            if w.pa in uni:
+                new_edges.append(w.pa)
+            else:
                Adr[w.adrNorm].wl.append(w)
                WinPos.add(w.pa)
 
         MMost=set()       
         for m in MM.values():
             if m.pa in uni:
+                new_edges.append(m.pa)
                 Adr[m.adrNorm].ml.append(m)
                 continue
             if m.pa in edges and (w:=next(iter(edges[m.pa]))).pa in WinPos:
@@ -367,6 +373,8 @@ def buildDSmakingCake(WW, MM, ofld):
             if E[m.pN]:     ouF=E[m.pN]
             if m not in U:                                  toOut(ouF,0,m,0)
         
+        with open(join(pH,basename(__file__).split('.')[0]),'w') as fn:
+            print(*new_edges,sep='\n',file=fn)
         ff=open('B2ouf','w')    
         for k in B2Ouf:
             if len(zzz:=B2Ouf[k])>1:
