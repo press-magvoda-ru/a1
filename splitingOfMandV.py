@@ -2,7 +2,7 @@ import multiprocessing as mp,os, pprint, sys
 from collections import defaultdict, namedtuple
 from datetime import datetime
 from functools import lru_cache
-from os.path import basename, dirname, join
+from os.path import basename, dirname, join, exists
 import fitz, rezname, timing
 #import os
 from reparseWxMx import Hn, Pg, bundle, add2Hn, DictFromFile, name2str, prsM, prsW, rname,\
@@ -314,6 +314,17 @@ def buildDSmakingCake(WW, MM, ofld):
     Wlst= {} 
     def HarvestByAdr(WW,MM): 
         B2Ouf=defaultdict(set); mw=defaultdict(lambda:defaultdict(int));  Adr=defaultdict(sameBy);  U=set()# квитанция размещена
+        pH=join(os.environ('USERPROFILE'),'Desktop','Hints')
+        uni=set();edges=defaultdict(set);bad=defaultdict(set)
+        def getHints():
+            os.makedirs(pH,exist_ok=1)
+            if exists(fn:=join(pH,'Hints.txt')):
+                for l in open(fn).readlines():
+                    if (n:=(l:=l.replase(' ','').split(',')))==1:
+                        uni.add(l[0])
+                    else:
+                        k= edges if n==2 else bad
+                        k[l[1]].add(l[0])
         def toOut(ouF,w,m,i=2):
             if ouF not in Wlst: Wlst[ouF]=Wshort(ouF, [], [0,0,0]) # [m,w,wm]
             F=Wlst[ouF];   
@@ -321,13 +332,35 @@ def buildDSmakingCake(WW, MM, ofld):
             else:       F.ll.append([w,m])
             U.add(m); U.add(w); F.cs[i]+=1             
             if m:mw[m.Hn][m.pN]=ouF
-        for w in WW.values():Adr[w.adrNorm].wl.append(w);   toOut(w.Hn,w,0,1); B2Ouf[forCMP(w.adr).blding()].add(w.Hn)
+        getHints()
+        WinPos=set()
+        for w in WW.values():
+            toOut(w.Hn,w,0,1); 
+            B2Ouf[forCMP(w.adr).blding()].add(w.Hn)
+            if w.pa not in uni:
+               Adr[w.adrNorm].wl.append(w)
+               WinPos.add(w.pa)
+
+        MMost=set()       
         for m in MM.values():
+            if m.pa in uni:
+                Adr[m.adrNorm].ml.append(m)
+                continue
+            if m.pa in edges and (w:=next(iter(edges[m.pa]))).pa in WinPos:
+                fnd=0
+                for i,v in enumerate((A:= Adr[w.adrNorm]).wl):# Не предполагаем что адресс общий всёж
+                    if v==w:                                toOut(w.Hn,A.wl.pop(i),m);fnd=1;break
+                if fnd:continue
+            MMost.add(m)
+            
+        for m in MMost:
             for i,w in enumerate((A:= Adr[m.adrNorm]).wl):
-                if w.u == m.u:                              toOut(w.Hn,A.wl.pop(i),m);   break
+                if w.u == m.u and (w.pa not in bad[m.pa]):  toOut(w.Hn,A.wl.pop(i),m);   break
             else:   A.ml.append(m)
+        
         for  A in Adr.values():
-            if len(A.wl)*len(A.ml)==1:                      toOut(A.wl[0].Hn,A.wl[0],A.ml[0])
+            if len(A.wl)*len(A.ml)==1 and((m:=A.ml[0]).pa not in uni)and(w:=A.wl[0]).pa not in bad[m.pa]: 
+                                                            toOut(w.Hn,w,m)
             else:set(toOut(next(iter(B2Ouf[B])),0,m,0)for m in  A.ml if(B:=forCMP(m.adr,'M').blding())in B2Ouf)
         for m in MM.values():
             if m.pN==0:     ouF=E[min(E.keys())] if(E:=mw[m.Hn])else m.Hn
