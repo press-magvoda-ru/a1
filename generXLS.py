@@ -175,7 +175,7 @@ def mainXLSsheetAndFresh(mnL, wb,wf): ## пока один поток сбора
             (D:=x.Deliv or y.Deliv)
             for i in Deliveries.split('&'):
                 if ~D.find(i):
-                    DD=i;break;
+                    DD=i;break
             else:
                     DD=D#defMekDeliv
             putAndPgTot(l:=l+1,DD) # выбор из управляек и фолбэк Ливицкая здесь или при сборе ?
@@ -214,7 +214,7 @@ def mainXLSsheetAndFresh(mnL, wb,wf): ## пока один поток сбора
             pgBuhm.cell(row=i, column=2).value = str(v)
     toBuhm()
     putTot(1,1,f'{ZZ[0]}') #Общее кол-во:  в левленный столбец пояснение если чё
-def makeXLS(path):
+def makeXLS(path,VRSbs=''):
     #s=f'*{typefilesOfdata}'
     (mnL := #sorted(
    #os.popen(f'dir "{os.path.join(path,s)}" /S /O-S /b').read().splitlines()
@@ -226,7 +226,7 @@ def makeXLS(path):
     wf = NeedWF and openpyxl.Workbook();    wf and wf.remove_sheet(wf.active)
     mainXLSsheetAndFresh(mnL, wb,wf)
     tik=rezname.rezname()
-    nm =f'SURV$${tik}.xlsx' ;#ЫГКМ  ну теперь ФСЁ ясНО # и выживальщики и pop-surv.gov74.ru lol
+    nm =f'{VRSbs}#SURV$${tik}.xlsx' ;#ЫГКМ  ну теперь ФСЁ ясНО # и выживальщики и pop-surv.gov74.ru lol
     nf =wf and f'Fresh${tik}.xlsx'
     wb.save(nm:=f'{os.path.join(path,nm)}');
     wf and wf.save(nf:=f'{os.path.join(path,nf)}')
@@ -236,5 +236,5 @@ def makeXLS(path):
 if __name__=='__main__':
     print(sys.argv)
     cur = (args := sys.argv)[1:] and args[1] or "."
-    makeXLS(cur)
+    makeXLS(cur,'FromMain')
 

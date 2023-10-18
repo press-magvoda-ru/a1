@@ -2,7 +2,7 @@ import multiprocessing as mp,os, pprint, sys
 from collections import defaultdict, namedtuple
 from datetime import datetime
 from functools import lru_cache
-from os.path import basename, dirname, join, exists
+from os.path import basename, dirname, join, exists,splitext
 import fitz, rezname, timing
 #import os
 from reparseWxMx import Hn, Pg, bundle, add2Hn, DictFromFile, name2str, prsM, prsW, rname,\
@@ -15,6 +15,8 @@ from NormiW import NormiAdr as forCMP
 print(__LINE__.f_lineno);print(__LINE__.f_lineno)
 #+1 or unk# +1 for de_ug purpose:
 inN, de_ug =os.cpu_count()+1, 0#+1 #
+VRS=rezname.rezname()
+VRSbs=basename(splitext(__file__)[0])
 def mkmk(fld): # утилита для mainUI
     if not os.path.isdir(fld):        os.mkdir(fld)
     os.chdir(fld);    os.system(f'start "" "{fld}"')
@@ -63,7 +65,7 @@ def mainUI(in_srcM,in_srcW,in_fld):
                     join(fld, name2str(f'{rname=}')), 'w'), width=333)  # nero are
                 nm=WM_mergeFromMultiPagePdf(fld, fld, fld)
             else: # de_ug yap
-                rootTotS=r'C:\AAA\MWrez_2023-05-22__15-19-38' #r'C:\AAA\MWrez_2023-05-19__14-06-31' #r'C:\AAA\MWrez_2023-05-18__11-17-51' #r'C:\AAA\MWrez_2023-05-11__14-28-22' #r'C:\AAA\MWrez_2023-05-10__13-54-07' #r'C:\AAA\MWrez_2023-04-06__18-21-47' #r'C:\AAA\MWrez_2023-04-06__13-10-57' #r'C:\AAA\MWrez_2023-04-06__11-43-38' #r'C:\AAA\MWrez_2023-04-05__16-26-04' #r'C:\AAA\MWrez_2023-04-05__13-59-22' #r'C:\AAA\MWrez_2023-03-29__22-47-56' #r'C:\AAA\MWrez_2023-03-29__19-26-09' #r'c:\aaa\MWrez_2023-03-29__10-11-48' #r'C:\AAA\MWrez_2023-03-20__09-53-55' #r'C:\AAA\MWrez_2023-03-07__15-52-36' #r'C:\AAA\MWrez_2023-03-06__14-40-51' #r'C:\AAA\MWrez_2023-03-06__13-36-47' #r'C:\AAA\MWrez_2023-02-28__15-47-32' #r'C:\AAA\MWrez_2023-02-28__13-53-17' #r'C:\AAA\MWrez_2023-02-17__14-35-06' #r"C:\AAA\MWrez_2023-02-16__08-35-37" 
+                rootTotS=r'C:\AAA\MWrez_2023-10-17__15-02-36' #r'C:\AAA\MWrez_2023-05-22__15-19-38' #r'C:\AAA\MWrez_2023-05-19__14-06-31' #r'C:\AAA\MWrez_2023-05-18__11-17-51' #r'C:\AAA\MWrez_2023-05-11__14-28-22' #r'C:\AAA\MWrez_2023-05-10__13-54-07' #r'C:\AAA\MWrez_2023-04-06__18-21-47' #r'C:\AAA\MWrez_2023-04-06__13-10-57' #r'C:\AAA\MWrez_2023-04-06__11-43-38' #r'C:\AAA\MWrez_2023-04-05__16-26-04' #r'C:\AAA\MWrez_2023-04-05__13-59-22' #r'C:\AAA\MWrez_2023-03-29__22-47-56' #r'C:\AAA\MWrez_2023-03-29__19-26-09' #r'c:\aaa\MWrez_2023-03-29__10-11-48' #r'C:\AAA\MWrez_2023-03-20__09-53-55' #r'C:\AAA\MWrez_2023-03-07__15-52-36' #r'C:\AAA\MWrez_2023-03-06__14-40-51' #r'C:\AAA\MWrez_2023-03-06__13-36-47' #r'C:\AAA\MWrez_2023-02-28__15-47-32' #r'C:\AAA\MWrez_2023-02-28__13-53-17' #r'C:\AAA\MWrez_2023-02-17__14-35-06' #r"C:\AAA\MWrez_2023-02-16__08-35-37" 
                 nm=WM_mergeFromMultiPagePdf(rootTotS, rootTotS, fld)# de_ug of doubling All
             os.system(f'start "" "{nm[0]}"')
             nm[1] and os.system(f'start "" "{nm[1]}"') #если wf is None 
@@ -190,7 +192,7 @@ def main(root, rout=None):
     rout = rout or root
     srcM, srcW, = (f'{root}{"_mek__shrt"}',
                    f'{root}{"_w__shrt"}') if de_ug else (f'{root}{"_mek_dec"}', f'{root}{"_w_t_dec"}',)
-    mainUI(join(root,'_mek'),join(root,'_w_t'),join(rout,f'MW{rezname.rezname()}'))
+    mainUI(join(root,'_mek'),join(root,'_w_t'),join(rout,f'MW{VRS}'))
 # различные DS(ах если бы - чисто воборьи и пушки) для быстро-быстрого паренья:
 W, M, = None, None, 
 WbyM, MbyW = {}, {}  #WbyM is  { HnW:{HnM:{номерв(HnM):номерв(HnW)}}} ...
@@ -314,54 +316,52 @@ def buildDSmakingCake(WW, MM, ofld):
     Wlst= {} 
     def HarvestByAdr(WW,MM): 
         B2Ouf=defaultdict(set); mw=defaultdict(lambda:defaultdict(int));  Adr=defaultdict(sameBy);  U=set()# квитанция размещена
-        pH=join(os.environ('USERPROFILE'),'Desktop','Hints')
+        pH=join(os.environ['USERPROFILE'],'Desktop','Hints')
         uni=set();edges=defaultdict(set);bad=defaultdict(set)
-        new_edges=[]
+        old_edges=[];        old_bad=[];        old_uni=[];        new_edges=[]
         def getHints():
             os.makedirs(pH,exist_ok=1)
             if exists(fn:=join(pH,'Hints.txt')):
-                for l in open(fn).readlines():
-                    if (n:=(l:=l.replase(' ','').split(',')))==1:
-                        uni.add(l[0])
-                    else:
-                        k= edges if n==2 else bad
-                        k[l[1]].add(l[0])
+                for z in open(fn).readlines():
+                    if (l:=(z:=z.strip('\n')).split('#')[0].replace(' ','')):
+                        if  (   l:=l.partition('+'))[1]=='+':
+                            edges[l[2]].add(l[0])
+                            old_edges.append(z)
+                        elif(l:=l[0].partition('-'))[1]=='-':
+                            bad[l[2]].add(l[0])
+                            old_bad.append(z)
+                        else:
+                            uni.add(l[0])
+                            old_uni.append(z)
         def toOut(ouF,w,m,i=2):
             if ouF not in Wlst: Wlst[ouF]=Wshort(ouF, [], [0,0,0]) # [m,w,wm]
             F=Wlst[ouF];   
             if w and m: 
                 F.ll[w.pN][1]=m;F.cs[1]-=1
-                new_edges.append(f'{w.pa},{m.pa}')
+                if w.pa not in edges[m.pa]: new_edges.append(f'{w.pa}+{m.pa} #{VRS} {w.Hn}:{w.pN:<4}*{m.pN:>4}:{m.Hn}')
             else:       F.ll.append([w,m])
             U.add(m); U.add(w); F.cs[i]+=1             
             if m:mw[m.Hn][m.pN]=ouF
         getHints()
-        WinPos=set()
+        WinPos=defaultdict(list)
         for w in WW.values():
             toOut(w.Hn,w,0,1); 
             B2Ouf[forCMP(w.adr).blding()].add(w.Hn)
-            if w.pa in uni:
-                new_edges.append(w.pa)
-            else:
+            if w.pa not in uni:
                Adr[w.adrNorm].wl.append(w)
-               WinPos.add(w.pa)
-
+               WinPos[w.pa].append(w)
         MMost=set()       
         for m in MM.values():
-            if m.pa in uni:
-                new_edges.append(m.pa)
-                Adr[m.adrNorm].ml.append(m)
-                continue
-            if m.pa in edges and (w:=next(iter(edges[m.pa]))).pa in WinPos:
-                fnd=0
+            if m.pa in uni:Adr[m.adrNorm].ml.append(m);continue
+            if m.pa in edges and (wpa:=next(iter(edges[m.pa]))) in WinPos:
+                fnd,w=0,WinPos[wpa][0]
                 for i,v in enumerate((A:= Adr[w.adrNorm]).wl):# Не предполагаем что адресс общий всёж
-                    if v==w:                                toOut(w.Hn,A.wl.pop(i),m);fnd=1;break
+                    if v==w:fnd=1;WinPos[wpa].pop(0);       toOut(w.Hn,A.wl.pop(i),m);break
                 if fnd:continue
             MMost.add(m)
-            
         for m in MMost:
             for i,w in enumerate((A:= Adr[m.adrNorm]).wl):
-                if w.u == m.u and (w.pa not in bad[m.pa]):  toOut(w.Hn,A.wl.pop(i),m);   break
+                if w.u == m.u and (w.pa not in bad[m.pa]):  toOut(w.Hn,A.wl.pop(i),m);break
             else:   A.ml.append(m)
         
         for  A in Adr.values():
@@ -373,8 +373,9 @@ def buildDSmakingCake(WW, MM, ofld):
             if E[m.pN]:     ouF=E[m.pN]
             if m not in U:                                  toOut(ouF,0,m,0)
         
-        with open(join(pH,basename(__file__).split('.')[0]),'w') as fn:
-            print(*new_edges,sep='\n',file=fn)
+        with open(join(pH,VRS+'.txt'),'w') as fn:
+            for l in old_edges,old_bad,old_uni,new_edges: 
+                print(*l,sep='\n',file=fn)
         ff=open('B2ouf','w')    
         for k in B2Ouf:
             if len(zzz:=B2Ouf[k])>1:
@@ -402,7 +403,7 @@ def buildDSmakingCake(WW, MM, ofld):
     pprint.pprint(WbyM, width=99999999, stream=open(join(ofld, 'WbyM'), 'w'))
     print(timing.log('4_2', ":WbyM"))
     from  debundle import getS
-    getS(unk);  rez=makeXLS(unk);   unk=join(unk,'');
+    getS(unk);  rez=makeXLS(unk,VRSbs);   unk=join(unk,'');
     os.system(f'del "{unk}*{typefilesOfdata}"')
     print(timing.log('4_E', "Отсохронялись"))
     return rez
