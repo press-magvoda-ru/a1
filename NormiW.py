@@ -1,9 +1,15 @@
 ﻿import logging,sys,re,io   #logger =logging.getLogger(__name__)
+from pprint import pprint
 def print_to_string(*args, **kwargs):
     kwargs['end']=kwargs.get('end','')#TODOne
     with io.StringIO() as out:
         print(*args, file=out, **kwargs)
         return out.getvalue() 
+def pprint_to_string(obj, **kwargs):
+    with io.StringIO() as out:
+        pprint(obj, stream=out, **kwargs)
+        return out.getvalue() 
+
 
 from collections import Counter #Pg = namedtuple('Pg', 'pN Hn u els pa sq adr UrFcs Deliv')
 def StructFromFile(path):   return eval(open(path).read())    #"""TODO import ast;ast.literal_eval"""

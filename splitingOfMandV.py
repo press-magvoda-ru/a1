@@ -8,7 +8,7 @@ import fitz, rezname, timing
 from reparseWxMx import Hn, Pg, bundle, add2Hn, DictFromFile, name2str, prsM, prsW, rname,\
     makeEmptyPg, makeFakeNxtPg, lstInWithExtention
 from itertools import chain
-from generXLS import makeXLS,typefilesOfdata
+from generXLS import makeXLS,typefilesOfdata,Uprs1st,prf
 import inspect; __LINE__ = inspect.currentframe()
 from NormiW import NormiAdr as forCMP
 #from exceptlst import Except
@@ -239,8 +239,8 @@ def inSubmergeW(prt, ofld, rname):
         Hn=e.Hn;    ewm=e.ll
         kkey=lambda l:l[0] and forCMP(l[0].adr) or forCMP(l[1].adr,'M')
         onamePdf=f'{join(ofld,rnm:=Hn[2:])}.pdf'
-        if rnm[0]in ["№","Г","У"]: #"Пач-ин" #!!! ориентир наличие № :) AZAZA
-            prf='000-'; onamePdf2=f'{join(ofld,prf+rnm)}.pdf'
+        if rnm[0]in Uprs1st:
+            onamePdf2=f'{join(ofld,prf+rnm)}.pdf'
             sG=set(forCMP(a[0].adr).blding()for a in ewm if a[0])
             oldEwm=ewm;ewm=[];onlyMEK=[]
             for a in oldEwm:
@@ -311,7 +311,7 @@ def buildDSmakingCake(WW, MM, ofld):
             def slPg(lPg): return (f'{i:05}:{pg}'for i,pg in enumerate(lPg))
             def tS(lPg):return '\n'.join(slPg(lPg))
             lwl,lml=len(self.wl),len(self.ml)
-            h=f'{lwl=},{lml=},{lp=}'
+            h=f'{lwl=},{lml=}'
             return f'hhh{h}\nWL({lwl}):\n{tS(self.wl)}\nML({lml}):\n{tS(self.ml)}\n{h}\nhhh'
     Wlst= {} 
     def HarvestByAdr(WW,MM): 

@@ -10,6 +10,23 @@ from reparseWxMx import PgIsEmpy,bundle,lstInWithExtention,Deliveries,defMekDeli
 import rezname
 import string
 from collections import Counter
+Uprs1st=["№","Г","У"] #"Пач-ин" #!!! ориентир наличие № :) AZAZA # in SplitingOfMandV and generXLS same this line (filtr)
+prf='000-' 
+def TrackByName(name):
+    import re
+    from zipuem import Track
+    if re.search(r'\(.*\)',name):return Track.Непечатное
+    if name[1] in Uprs1st:return Track.IT
+    return Track.Левицкой
+    #if name.startswith(prf):return Track.Левицкой
+    return Track.Unknown
+def openZdata(fld='.'):
+    import zipuem
+    fo=open(fn:=os.path.join(fld,'zipuemWithData.py'),'wt')
+    import inspect
+    print(inspect.getsource(zipuem),file=fo)
+    return fo
+
 alf=string.ascii_uppercase
 typefilesOfdata=".dict_of_pages"
 ZZ=[0]
@@ -17,7 +34,7 @@ ZZ=[0]
 Urs='ВОДОКАНАЛ&ТЕПЛОФИКАЦИЯ&МЭК&АЗИМУТ&ГКС МКД'
 NeedWF=0
 OnlyTotals=1
-def mainXLSsheetAndFresh(mnL, wb,wf): ## пока один поток сбора в два потока выгруза
+def mainXLSsheetAndFresh(mnL, wb,wf,fo): ## пока один поток сбора в два потока выгруза
     #фарш#
     """
     wf - выход для фреша - выкатки номеров пустых по файл-вкладка
@@ -35,6 +52,7 @@ def mainXLSsheetAndFresh(mnL, wb,wf): ## пока один поток сбора
     strFrsh='oFrsh';                wb.create_sheet(strFrsh);       pgFrsh=wb[strFrsh]
     1;          pgFrshR=1
     Kontrs=Counter()
+    from zipuem import tracks,is2sides # * is error!?
     for fullPathFile in mnL:
         if fullPathFile.find('$bundle')<0:
             continue
@@ -86,7 +104,6 @@ def mainXLSsheetAndFresh(mnL, wb,wf): ## пока один поток сбора
         if wf:
             total.column_dimensions[Hehehe(fl)].width = 12
             
-        agre=14; 
 
         r+=1
         for i in 'b':
@@ -113,6 +130,11 @@ def mainXLSsheetAndFresh(mnL, wb,wf): ## пока один поток сбора
             putAndFrsh(7,f'={hh:^9}')
             putAndFrsh(8,f'={stat.P:^9}')
             putAndFrsh(9,f'={hh+stat.P:^9}')
+
+        #Зипуем! сегодня мы .... зипуем (1)
+        is2sides[pdfname]=stat.P
+        tracks[pdfname]=TrackByName(pdfname)
+            
         #print(wb.sheetnames)
         #sheet.cell(row=(r := r+1), column=(c := 2)).value=f'{sp[-1]}:';wNums=len(sp[-1])+1
         
@@ -122,25 +144,25 @@ def mainXLSsheetAndFresh(mnL, wb,wf): ## пока один поток сбора
         r+=1
         if isFst: pgTotR+=1
         for i in 'a':
-            putAndPgTot(c:=c+1,"W-№", isFst);
-            putAndPgTot(c:=c+1,"W-ЛС", isFst);
-            putAndPgTot(c:=c+1,"W-Адрес", isFst);
-            putAndPgTot(c:=c+1,"W-площадь", isFst);
-            putAndPgTot(c:=c+1,"W-ФИО", isFst);
-            putAndPgTot(c:=c+1,"W-ЕЛС", isFst);
-            putAndPgTot(c:=c+1,"W-adrNrm", isFst);
+            putAndPgTot(c:=c+1,"W-№", isFst)
+            putAndPgTot(c:=c+1,"W-ЛС", isFst)
+            putAndPgTot(c:=c+1,"W-Адрес", isFst)
+            putAndPgTot(c:=c+1,"W-площадь" and "wБАЛАНС|tБаланс", isFst)
+            putAndPgTot(c:=c+1,"W-ФИО", isFst)
+            putAndPgTot(c:=c+1,"W-ЕЛС", isFst)
+            putAndPgTot(c:=c+1,"W-adrNrm", isFst)
             
-            putAndPgTot(c:=c+1,"M-adrNrm", isFst);
-            putAndPgTot(c:=c+1,"M-ЕЛС", isFst);
-            putAndPgTot(c:=c+1,"M-ФИО", isFst);
-            putAndPgTot(c:=c+1,"M-площадь", isFst);
-            putAndPgTot(c:=c+1,"M-Адрес", isFst);
-            putAndPgTot(c:=c+1,"M-ЛС", isFst);
-            putAndPgTot(c:=c+1,"M-№", isFst);
+            putAndPgTot(c:=c+1,"M-adrNrm", isFst)
+            putAndPgTot(c:=c+1,"M-ЕЛС", isFst)
+            putAndPgTot(c:=c+1,"M-ФИО", isFst)
+            putAndPgTot(c:=c+1,"M-площадь", isFst)
+            putAndPgTot(c:=c+1,"M-Адрес", isFst)
+            putAndPgTot(c:=c+1,"M-ЛС", isFst)
+            putAndPgTot(c:=c+1,"M-№", isFst)
             
             putAndPgTot(c:=c+1,"Доставщик", isFst)
 
-            putAndPgTot(c:=c+1,"ВсеКонтрА", isFst); agre=c;
+            putAndPgTot(c:=c+1,"ВсеКонтрА", isFst); 
             for j in Urs.split('&'):
                 putAndPgTot(c:=c+1,f'{j}:', isFst)
         isFst=False; # для однократного  заголовка в total
@@ -153,7 +175,7 @@ def mainXLSsheetAndFresh(mnL, wb,wf): ## пока один поток сбора
             # els = x.els
             # cell.value = f'=HYPERLINK("{pdfPath}.pdf","{els}")'
             # cell.style = "Hyperlink"
-            pgTotR+=1; putPgTot(1,pdfname);
+            pgTotR+=1; putPgTot(1,pdfname)
             putAndPgTot(l := l+1, f'={x.pN+1}')
             putAndPgTot(cpaW:=(l := l+1), x.pa); wpaW=max(wpaW,len(x.pa))
             putAndPgTot(c1 := (l := l+1), x.adr.replace('%', '/').rjust(w1 := max(w1, len(x.adr))))
@@ -184,7 +206,7 @@ def mainXLSsheetAndFresh(mnL, wb,wf): ## пока один поток сбора
             for j in Urs.split('&'):
                 putAndPgTot(l:=l+1,f'={int(not not ~V.find(j))}')  #"пока так" если имена могут префиксоватся что искать &ndl& с предварительным оборачиванием &V& 
         if wf:
-            putfre(0,f'{freR}');
+            putfre(0,f'{freR}')
             shfre.column_dimensions[alf[0]].width = 20 #Кол-во: в левленный столбец пояснение если чё
         ZZ[0]+=freR
 
@@ -214,6 +236,14 @@ def mainXLSsheetAndFresh(mnL, wb,wf): ## пока один поток сбора
             pgBuhm.cell(row=i, column=2).value = str(v)
     toBuhm()
     putTot(1,1,f'{ZZ[0]}') #Общее кол-во:  в левленный столбец пояснение если чё
+
+    #выхлоп tracks is2sides
+    from NormiW import pprint_to_string
+    TrS=('{\n '+pprint_to_string({k:str(v)for k,v in tracks.items()},width=1)[1:-3]+',\n}'
+        ).replace(": 'Track.",':').replace("',",',')
+    is2S='{\n '+pprint_to_string(dict(is2sides),width=-1)[1:-2]+',\n}'
+    print(f'tracks.update({TrS})',f'is2sides.update({is2S})',sep='\n',file=fo);fo.close()
+    
 def makeXLS(path,VRSbs=''):
     #s=f'*{typefilesOfdata}'
     (mnL := #sorted(
@@ -224,11 +254,11 @@ def makeXLS(path,VRSbs=''):
     #)
     wb = openpyxl.Workbook(); wb.remove_sheet(wb.active)
     wf = NeedWF and openpyxl.Workbook();    wf and wf.remove_sheet(wf.active)
-    mainXLSsheetAndFresh(mnL, wb,wf)
+    mainXLSsheetAndFresh(mnL, wb,wf,fo=openZdata(path))
     tik=rezname.rezname()
     nm =f'{VRSbs}#SURV$${tik}.xlsx' ;#ЫГКМ  ну теперь ФСЁ ясНО # и выживальщики и pop-surv.gov74.ru lol
     nf =wf and f'Fresh${tik}.xlsx'
-    wb.save(nm:=f'{os.path.join(path,nm)}');
+    wb.save(nm:=f'{os.path.join(path,nm)}')
     wf and wf.save(nf:=f'{os.path.join(path,nf)}')
     #os.system(f'start "" "cmd /c {nm}"')
     return nm, nf
