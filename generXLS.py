@@ -52,7 +52,7 @@ def mainXLSsheetAndFresh(mnL, wb,wf,fo): ## пока один поток сбо�
     strFrsh='oFrsh';                wb.create_sheet(strFrsh);       pgFrsh=wb[strFrsh]
     1;          pgFrshR=1
     Kontrs=Counter()
-    from zipuem import tracks,is2sides # * is error!?
+    from zipuem import tracks # * is error!?
     for fullPathFile in mnL:
         if fullPathFile.find('$bundle')<0:
             continue
@@ -132,8 +132,7 @@ def mainXLSsheetAndFresh(mnL, wb,wf,fo): ## пока один поток сбо�
             putAndFrsh(9,f'={hh+stat.P:^9}')
 
         #Зипуем! сегодня мы .... зипуем (1)
-        is2sides[pdfname]=stat.P
-        tracks[pdfname]=TrackByName(pdfname)
+        tracks[pdfname]=(stat.P,TrackByName(pdfname))
             
         #print(wb.sheetnames)
         #sheet.cell(row=(r := r+1), column=(c := 2)).value=f'{sp[-1]}:';wNums=len(sp[-1])+1
@@ -239,10 +238,16 @@ def mainXLSsheetAndFresh(mnL, wb,wf,fo): ## пока один поток сбо�
 
     #выхлоп tracks is2sides
     from NormiW import pprint_to_string
-    TrS=('{\n '+pprint_to_string({k:str(v)for k,v in tracks.items()},width=1)[1:-3]+',\n}'
-        ).replace(": 'Track.",':').replace("',",',')
-    is2S='{\n '+pprint_to_string(dict(is2sides),width=-1)[1:-2]+',\n}'
-    print(f'tracks.update({TrS})',f'is2sides.update({is2S})',sep='\n',file=fo);fo.close()
+    # TrS=('{\n '+pprint_to_string({k:str(v)for k,v in tracks.items()},width=1)[1:-3]+',\n}'
+    #     ).replace(": 'Track.",':').replace("',",',')
+    # is2S='{\n '+pprint_to_string(dict(is2sides),width=-1)[1:-2]+',\n}'
+    # print(f'tracks.update({TrS})',f'is2sides.update({is2S})',sep='\n',file=fo);fo.close()
+
+    TrS='{\n '+'\n'.join(f'{repr(k)}:({c},{str(t)}),'for k,(c,t) in tracks.items()).replace("Track.",'')+'\n}'
+    print(f'tracks.update({TrS})',file=fo);fo.close()
+
+
+
     
 def makeXLS(path,VRSbs=''):
     #s=f'*{typefilesOfdata}'

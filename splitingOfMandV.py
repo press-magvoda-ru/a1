@@ -16,7 +16,7 @@ print(__LINE__.f_lineno);print(__LINE__.f_lineno)
 #+1 or unk# +1 for de_ug purpose:
 inN, de_ug =os.cpu_count()+1, 0#+1 #
 VRS=rezname.rezname()
-VRSbs=splitext(sys.argv[0].split('_',1)[-1])[0]#basename(splitext(__file__)[0])#print(VRSbs)
+VRSbs=splitext(basename(sys.argv[0]).split('_',1)[-1])[0]#basename(splitext(__file__)[0])#print(VRSbs)
 def mkmk(fld): # утилита для mainUI
     if not os.path.isdir(fld):        os.mkdir(fld)
     os.chdir(fld);    os.system(f'start "" "{fld}"')
