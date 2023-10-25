@@ -11,6 +11,7 @@ from itertools import chain
 from generXLS import makeXLS,typefilesOfdata,Uprs1st,prf
 import inspect; __LINE__ = inspect.currentframe()
 from NormiW import NormiAdr as forCMP
+from distribforzip import zuzazip
 #from exceptlst import Except
 print(__LINE__.f_lineno);print(__LINE__.f_lineno)
 #+1 or unk# +1 for de_ug purpose:
@@ -63,11 +64,12 @@ def mainUI(in_srcM,in_srcW,in_fld):
 
                 pprint.pprint(rname, stream=open(
                     join(fld, name2str(f'{rname=}')), 'w'), width=333)  # nero are
-                nm=WM_mergeFromMultiPagePdf(fld, fld, fld)
+                nm,unk=WM_mergeFromMultiPagePdf(fld, fld, fld)
             else: # de_ug yap
                 rootTotS=r'C:\AAA\MWrez_2023-10-17__15-02-36' #r'C:\AAA\MWrez_2023-05-22__15-19-38' #r'C:\AAA\MWrez_2023-05-19__14-06-31' #r'C:\AAA\MWrez_2023-05-18__11-17-51' #r'C:\AAA\MWrez_2023-05-11__14-28-22' #r'C:\AAA\MWrez_2023-05-10__13-54-07' #r'C:\AAA\MWrez_2023-04-06__18-21-47' #r'C:\AAA\MWrez_2023-04-06__13-10-57' #r'C:\AAA\MWrez_2023-04-06__11-43-38' #r'C:\AAA\MWrez_2023-04-05__16-26-04' #r'C:\AAA\MWrez_2023-04-05__13-59-22' #r'C:\AAA\MWrez_2023-03-29__22-47-56' #r'C:\AAA\MWrez_2023-03-29__19-26-09' #r'c:\aaa\MWrez_2023-03-29__10-11-48' #r'C:\AAA\MWrez_2023-03-20__09-53-55' #r'C:\AAA\MWrez_2023-03-07__15-52-36' #r'C:\AAA\MWrez_2023-03-06__14-40-51' #r'C:\AAA\MWrez_2023-03-06__13-36-47' #r'C:\AAA\MWrez_2023-02-28__15-47-32' #r'C:\AAA\MWrez_2023-02-28__13-53-17' #r'C:\AAA\MWrez_2023-02-17__14-35-06' #r"C:\AAA\MWrez_2023-02-16__08-35-37" 
-                nm=WM_mergeFromMultiPagePdf(rootTotS, rootTotS, fld)# de_ug of doubling All
+                nm,unk=WM_mergeFromMultiPagePdf(rootTotS, rootTotS, fld)# de_ug of doubling All
             os.system(f'start "" "{nm[0]}"')
+            zuzazip(unk)
             nm[1] and os.system(f'start "" "{nm[1]}"') #если wf is None 
             sys.exit()
     app = QtWidgets.QApplication(sys.argv); (myWindow:=mn_Window()).show();    app.exec()
@@ -202,9 +204,9 @@ def WM_mergeFromMultiPagePdf(srcW, srcM, outfld):
     if de_ug:
         global rname
         rname=DictFromFile(join(srcW or srcM,'rname'))#DictFromFile(join(root,'rname'))
-    nm=buildDSmakingCake(  W := DictFromFile(join(srcW, 'wTotB')),
+    nm,unk=buildDSmakingCake(  W := DictFromFile(join(srcW, 'wTotB')),
                         M := DictFromFile(join(srcM, 'mTotB')), outfld)
-    return nm
+    return nm,unk
 pdfnum = 0
 def bundlename(name,cs):#counters[m,w,wm]
         kvt=cs[0]+cs[1]+2*cs[-1]; #== печатных страниц
@@ -406,7 +408,7 @@ def buildDSmakingCake(WW, MM, ofld):
     getS(unk);  rez=makeXLS(unk,VRSbs);   unk=join(unk,'');
     os.system(f'del "{unk}*{typefilesOfdata}"')
     print(timing.log('4_E', "Отсохронялись"))
-    return rez
+    return rez,unk
 if __name__ == '__main__':
     mp.freeze_support()
     root = rezname.getArgOr(1, dirname(dirname(__file__)), 'Dir')
