@@ -1,13 +1,18 @@
-import multiprocessing as mp,os, pprint, sys
+import multiprocessing as mp
+import os
+import pprint
+import sys
 from collections import defaultdict, namedtuple
 from datetime import datetime
 from functools import lru_cache
 from os.path import basename, dirname, join, exists,splitext
-import fitz, rezname, timing
+import fitz
+import rezname
+import timing
 #import os
 from reparseWxMx import Hn, Pg, bundle, add2Hn, DictFromFile, name2str, prsM, prsW, rname,\
-    makeEmptyPg, makeFakeNxtPg, lstInWithExtention
-from itertools import chain
+    makeEmptyPg, lstInWithExtention # makeFakeNxtPg,
+#from itertools import chain
 from generXLS import makeXLS,typefilesOfdata,Uprs1st,prf
 import inspect; __LINE__ = inspect.currentframe()
 from NormiW import NormiAdr as forCMP
@@ -25,7 +30,7 @@ def mainUI(in_srcM,in_srcW,in_fld):
     from PyQt5 import QtWidgets, uic
     try:
         frm_cls = uic.loadUiType(f'{os.path.dirname(__file__)}\\guiForPairing.ui')[0]
-    except:
+    except Exception:
         from guiForPairing import Ui_MainWindow as frm_cls
 
     class mn_Window(QtWidgets.QMainWindow, frm_cls):
@@ -57,7 +62,7 @@ def mainUI(in_srcM,in_srcW,in_fld):
             srcM,srcW,fld=self.b_srcM.text(),self.b_srcW.text(),self.b_fld.text()
             mkmk(fld);  print(srcM,srcW,fld)
             #HERE use SAGEread for 
-            nm='';
+            nm=''
             if not de_ug:
                 M_data_spliting(srcM, fld) # если чек т.е есть mTotB был то воспользоваться УЖОЙным M_
                 W_data_spliting(srcW, fld)
@@ -72,7 +77,7 @@ def mainUI(in_srcM,in_srcW,in_fld):
             zuzazip(unk)
             nm[1] and os.system(f'start "" "{nm[1]}"') #если wf is None 
             sys.exit()
-    app = QtWidgets.QApplication(sys.argv); (myWindow:=mn_Window()).show();    app.exec()
+    app = QtWidgets.QApplication(sys.argv); mn_Window().show();    app.exec()
     return ['','','']
 Nparts = namedtuple('Nparts', 'sum lst index')
 Wshort = namedtuple('Wshort', 'Hn ll cs') # -замена семантики 
@@ -84,8 +89,9 @@ def LinesOfFileName(pathofFile): return open(pathofFile).read().splitlines()
 @lru_cache(maxsize=999)
 def weightMek(a):
     try:
-        if (rl := pagesInPDF(a))==(nm := int(basename(a).split('-')[4])): return nm
-    except:
+        if (rl := pagesInPDF(a))==(nm := int(basename(a).split('-')[4])):
+            return nm
+    except Exception:
         print(f'!!!Файл:{a} - Не форматное имя  +{rl} к различению общего числа (страниц VS квитанций')
         return 0         #TODO write in table bads of mek-file-pdf with massage
     print(f'!!!Файл:{a} из имени: {nm} по факту: {rl}  имя не != содержимому')
@@ -111,7 +117,7 @@ def inSubProcM(Tp, base, prt):
     if (prt.index == 1):  # само пикленье Рика
         pagestxt.write('{\n')
     print(f'{prt.index=:^3} weght:{prt.sum[0]:^17.3f} {pid=:^7}len={len(prt.lst):>4} ',
-          f' '.join(f'{weightMek(f)}'for f in prt.lst), end=' END\n')
+          ' '.join(f'{weightMek(f)}'for f in prt.lst), end=' END\n')
     for inp in (fitz.open(f) for f in prt.lst):
         Name = Hn(inp.name,Tp)
         for p in range(szInp := inp.page_count):
@@ -128,7 +134,7 @@ def M_data_spliting(src, of):
     src, Tp, = dirend(src), 'M',
     stdout, sys.stdout = sys.stdout, open((of := of+f'\\_{Tp}{rezname.rezname()}')+'.txt', 'w')
     print(f">{Tp} start: {datetime.now()}")
-    print(timing.log(f'mainpid', f':{mainpid=:05} {inN=:^20}'), flush=True)
+    print(timing.log('mainpid', f':{mainpid=:05} {inN=:^20}'), flush=True)
     (lfiles := sorted(lstInWithExtention(src), key=weightMek, reverse=True))
     MlFilteredFiles=[e for e in lfiles if basename(e).split('.', 1)[0].split('-')[5:]] #ПYAтыЙ йэлемент мила
     add2Hn(MlFilteredFiles,Tp)
@@ -157,7 +163,7 @@ def inSubProcW(Tp, base, prt):
     if (prt.index == 1):
         pagestxt.write('{')
     print(f'{prt.index=:^3} weght:{prt.sum[0]:^17.3f} {pid=:^7}len={len(prt.lst):>4} ',
-          f' '.join(f'{pagesInPDF(f)}'for f in prt.lst), end=' END\n')
+          ' '.join(f'{pagesInPDF(f)}'for f in prt.lst), end=' END\n')
     for inp in (fitz.open(f) for f in prt.lst):
         Name = Hn(inp.name,Tp)
         for p in range(szInp := inp.page_count):
@@ -172,7 +178,7 @@ def W_data_spliting(src, of):
     stdout, sys.stdout = sys.stdout, open(
         (of := of+f'\\_{Tp}{rezname.rezname()}')+'.txt', 'w')
     print(f">{Tp} start:{datetime.now()}")
-    print(timing.log(f'mainpid', f':{mainpid=:05} {inN=:^20}'), flush=True)
+    print(timing.log('mainpid', f':{mainpid=:05} {inN=:^20}'), flush=True)
     add2Hn(lfiles := sorted(lstInWithExtention(src,non='Сопроводитель'), key=pagesInPDF, reverse=True),Tp)
     base, procs, chunks, = 0, [], toNparts(lfiles, inN, Wpages2time, pagesInPDF)
     for chunk in chunks:
@@ -238,18 +244,23 @@ def inSubmergeW(prt, ofld, rname):
           f' '.join(f'{len(f.ll)}'for f in prt.lst), end=' ENDWW\n')
     ePg=makeEmptyPg()  
     for e in prt.lst:  # e is namedtuple('Wshort', 'Hn ll cs')
-        Hn=e.Hn;    ewm=e.ll
-        kkey=lambda l:l[0] and forCMP(l[0].adr) or forCMP(l[1].adr,'M')
+        Hn=e.Hn
+        ewm=e.ll
+        def kkey(l):
+            return l[0] and forCMP(l[0].adr) or forCMP(l[1].adr, 'M')
         onamePdf=f'{join(ofld,rnm:=Hn[2:])}.pdf'
         if rnm[0]in Uprs1st:
             onamePdf2=f'{join(ofld,prf+rnm)}.pdf'
             sG=set(forCMP(a[0].adr).blding()for a in ewm if a[0])
-            oldEwm=ewm;ewm=[];onlyMEK=[]
+            oldEwm,ewm,onlyMEK=ewm,[],[]
             for a in oldEwm:
-                if a[0]or(forCMP(a[1].adr,'M').blding() in sG):    ewm.append(a)
-                else:                                               onlyMEK.append(a)
+                if a[0]or(forCMP(a[1].adr,'M').blding() in sG):
+                    ewm.append(a)
+                else:
+                    onlyMEK.append(a)
             if onlyMEK:
-                r2=len(onlyMEK);e.cs[0]-=r2
+                r2=len(onlyMEK)
+                e.cs[0]-=r2
                 onameBnd2=f'{join(ofld,prf+bundlename(Hn,[r2,0,0]))}{typefilesOfdata}'
                 pagestxt2 = open(onameBnd2, 'w')
                 pN2=-1
@@ -298,7 +309,9 @@ def inSubmergeW(prt, ofld, rname):
 def buildDSmakingCake(WW, MM, ofld):
     os.chdir(ofld); print(timing.log('3.-2', "buildWowDataStructureTM:"));  ToBad=[];   toR=[]
     for k,v in MM.items():
-        if v.isBad: ToBad.append(v);    toR.append(k)
+        if v.isBad:
+            ToBad.append(v)
+            toR.append(k)
     for k in toR:del MM[k]
     toR=[]; print('Досохранение except:');    doc=fitz.open();    docName=f'{join(ofld,"except")}.pdf'
     for mmm in ToBad:
@@ -319,8 +332,7 @@ def buildDSmakingCake(WW, MM, ofld):
     def HarvestByAdr(WW,MM): 
         B2Ouf=defaultdict(set); mw=defaultdict(lambda:defaultdict(int));  Adr=defaultdict(sameBy);  U=set()# квитанция размещена
         pH=join(os.environ['USERPROFILE'],'Desktop','Hints')
-        uni=set();edges=defaultdict(set);bad=defaultdict(set)
-        old_edges=[];        old_bad=[];        old_uni=[];        new_edges=[]
+        uni,edges,bad,old_edges,old_bad,old_uni,new_edges=set(),defaultdict(set),defaultdict(set),[],[],[],[]
         def getHints():
             os.makedirs(pH,exist_ok=1)
             if exists(fn:=join(pH,'Hints.txt')):
@@ -336,44 +348,65 @@ def buildDSmakingCake(WW, MM, ofld):
                             uni.add(l[0])
                             old_uni.append(z)
         def toOut(ouF,w,m,i=2):
-            if ouF not in Wlst: Wlst[ouF]=Wshort(ouF, [], [0,0,0]) # [m,w,wm]
-            F=Wlst[ouF];   
+            if ouF not in Wlst: 
+                Wlst[ouF]=Wshort(ouF, [], [0,0,0]) # [m,w,wm]
+            F=Wlst[ouF]   
             if w and m: 
                 F.ll[w.pN][1]=m;F.cs[1]-=1
-                if w.pa not in edges[m.pa]: new_edges.append(f'{w.pa}+{m.pa} #{VRS} {w.Hn}:{w.pN:<4}*{m.pN:>4}:{m.Hn}')
-            else:       F.ll.append([w,m])
-            U.add(m); U.add(w); F.cs[i]+=1             
-            if m:mw[m.Hn][m.pN]=ouF
+                if w.pa not in edges[m.pa]:
+                    new_edges.append(f'{w.pa}+{m.pa} #{VRS} {w.Hn}:{w.pN:<4}*{m.pN:>4}:{m.Hn}')
+            else:
+                F.ll.append([w,m])
+            U.add(m)
+            U.add(w)
+            F.cs[i]+=1             
+            if m:
+                mw[m.Hn][m.pN]=ouF
         getHints()
         WinPos=defaultdict(list)
         for w in WW.values():
-            toOut(w.Hn,w,0,1); 
+            toOut(w.Hn,w,0,1)
             B2Ouf[forCMP(w.adr).blding()].add(w.Hn)
             if w.pa not in uni:
                Adr[w.adrNorm].wl.append(w)
                WinPos[w.pa].append(w)
         MMost=set()       
         for m in MM.values():
-            if m.pa in uni:Adr[m.adrNorm].ml.append(m);continue
+            if m.pa in uni:
+                Adr[m.adrNorm].ml.append(m)
+                continue
             if m.pa in edges and (wpa:=next(iter(edges[m.pa]))) in WinPos:
                 fnd,w=0,WinPos[wpa][0]
                 for i,v in enumerate((A:= Adr[w.adrNorm]).wl):# Не предполагаем что адресс общий всёж
-                    if v==w:fnd=1;WinPos[wpa].pop(0);       toOut(w.Hn,A.wl.pop(i),m);break
-                if fnd:continue
+                    if v==w:
+                        fnd=1
+                        WinPos[wpa].pop(0)
+                        toOut(w.Hn,A.wl.pop(i),m)
+                        break
+                if fnd:
+                    continue
+                #24Feb05 возможно? без fnd и делать else: continue   вложенного for
             MMost.add(m)
         for m in MMost:
             for i,w in enumerate((A:= Adr[m.adrNorm]).wl):
-                if w.u == m.u and (w.pa not in bad[m.pa]):  toOut(w.Hn,A.wl.pop(i),m);break
-            else:   A.ml.append(m)
+                if w.u == m.u and (w.pa not in bad[m.pa]):
+                    toOut(w.Hn,A.wl.pop(i),m)
+                    break
+            else:
+                A.ml.append(m)
         
         for  A in Adr.values():
             if len(A.wl)*len(A.ml)==1 and((m:=A.ml[0]).pa not in uni)and(w:=A.wl[0]).pa not in bad[m.pa]: 
                                                             toOut(w.Hn,w,m)
-            else:set(toOut(next(iter(B2Ouf[B])),0,m,0)for m in  A.ml if(B:=forCMP(m.adr,'M').blding())in B2Ouf)
+            else:
+                set(toOut(next(iter(B2Ouf[B])),0,m,0)for m in  A.ml if(B:=forCMP(m.adr,'M').blding())in B2Ouf)
         for m in MM.values():
-            if m.pN==0:     ouF=E[min(E.keys())] if(E:=mw[m.Hn])else m.Hn
-            if E[m.pN]:     ouF=E[m.pN]
-            if m not in U:                                  toOut(ouF,0,m,0)
+            if m.pN==0:
+                ouF=E[min(E.keys())] if(E:=mw[m.Hn])else m.Hn
+            if E[m.pN]:
+                ouF=E[m.pN]
+            if m not in U:
+                toOut(ouF,0,m,0)
         
         with open(join(pH,VRSbs+VRS+'.txt'),'w') as fn:
             for l in old_edges,old_bad,old_uni,new_edges: 
@@ -405,7 +438,8 @@ def buildDSmakingCake(WW, MM, ofld):
     pprint.pprint(WbyM, width=99999999, stream=open(join(ofld, 'WbyM'), 'w'))
     print(timing.log('4_2', ":WbyM"))
     from  debundle import getS
-    getS(unk);  rez=makeXLS(unk,VRSbs);   unk=join(unk,'');
+    getS(unk)
+    rez,unk=makeXLS(unk,VRSbs),join(unk,'')
     os.system(f'del "{unk}*{typefilesOfdata}"')
     print(timing.log('4_E', "Отсохронялись"))
     return rez,unk
@@ -413,6 +447,7 @@ if __name__ == '__main__':
     mp.freeze_support()
     root = rezname.getArgOr(1, dirname(dirname(__file__)), 'Dir')
     SAGAread=rezname.getArgOr(2, ['doParseMEK','doParseWT','doParing']) #for real """TODO import ast;ast.literal_eval"""
-    print(root);    print(f':\t Начало', timing.log('', f'{timing.pred-timing.base}'))
+    print(root)
+    print(':\t Начало', timing.log('', f'{timing.pred-timing.base}'))
     main(join(root, ''))
     timing.ender()

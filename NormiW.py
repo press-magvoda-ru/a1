@@ -1,5 +1,8 @@
-﻿import logging,sys,re,io   #logger =logging.getLogger(__name__)
+﻿import sys
+import re
+import io   #logger =logging.getLogger(__name__)
 from pprint import pprint
+from collections import Counter #Pg = namedtuple('Pg', 'pN Hn u els pa sq adr UrFcs Deliv')
 def print_to_string(*args, **kwargs):
     kwargs['end']=kwargs.get('end','')#TODOne
     with io.StringIO() as out:
@@ -11,12 +14,11 @@ def pprint_to_string(obj, **kwargs):
         return out.getvalue() 
 
 
-from collections import Counter #Pg = namedtuple('Pg', 'pN Hn u els pa sq adr UrFcs Deliv')
 def StructFromFile(path):   return eval(open(path).read())    #"""TODO import ast;ast.literal_eval"""
 #isW=True;isM=not isW; # по умолчанию ожидем адрес W - для M сообща...
-bsD='.';
+bsD='.'
 fldD=bsD #if isW else ' ';
-MustZ=0;
+MustZ=0
 #print(isW,sys.argv)
 DELIMS="\
 г|*|г^\
@@ -36,11 +38,11 @@ toTown=set(i[0] for i in (('п Дзержинского', 1439),('п Димит�
 ('п Первомайский', 102),('п Супряк', 99),('п Куйбас', 92),('п Молодежный', 78),('п Надежда', 76),))
 toSave=set(i[0] for i in (('тер. СНТ Энергетик', 448),('п Новоянгелька', 223),('п Озерный', 166),('п Муравейник', 117),('с Агаповка', 85),('п Ближний', 71),
 ('сад Забота', 35),('тер. СНТ Лазурный', 16),('нп 2 Плотина', 4),('Красная Башкирия', 3),('р-н Агаповский', 2),('тер. СНТ Металлург-9', 1)))
-KVdelim=':';KOMdelim='/';    #если s==aFb где F=f'г{fldD}Магнитогорск' то s=Fb :
-nFor=[];NUiKva=[];Niknight=[];HsForsaken=[]
+KVdelim,KOMdelim=':','/'    #если s==aFb где F=f'г{fldD}Магнитогорск' то s=Fb :
+nFor,NUiKva,Niknight,HsForsaken=[],[],[],[]
 def t1dtL(t0tL):return f'{t0tL[-1]}.{t0tL[0]}'
 #def out_el(el):print(f"[{el[0]:02},{el[1]},{el[2]},],")
-sh=[15,48,15,44,0]; SfxBld=[];  SfxKva=[]
+sh,SfxBld,SfxKva=[15,48,15,44,0],[],[]
 valueDelimType='!'
 def pad(st:str,width:int,ch=valueDelimType):
     """width<-len(st) предпишим слева >len(st) допишем справа"""
@@ -66,7 +68,7 @@ class NormiAdr():
         global fldD,MustZ
          #'M'if isM else 'W' #'M' if isM else 'W' if isW else 'U'
         self.T=Tp;  normi=[];   isM=Tp=='M';    isW=Tp=='W'
-        fldD=bsD if isW else ' ';
+        fldD=bsD if isW else ' '
         delim=f'г{fldD}Магнитогорск'
         def tonormi(tks,lvlUk=0): normi.append(normFld(tks[0]));return tks[1:]# curFld)        
         
@@ -138,17 +140,22 @@ class NormiAdr():
                 curFld=curFld.replace('уч.','уч ',1).replace('уч','д.уч',1);    tks[0]=curFld.split(fldD)
                 #print("блят!2 уч уч уч :",mk_el(tks,normi,i,inp),file=sys.stderr)
                 #Uch.append([i,inp,mk_el(tks,normi,i,inp)]);  er[0]+=1;continue  
-            if curFld.startswith('д.уч'): curFld=curFld.replace('д.уч','д.',1); tks[0]=curFld.split(fldD)
-            if curFld[0]!='д': curFld=f'д{fldD}{curFld}';                       tks[0]=curFld.split(fldD)
+            if curFld.startswith('д.уч'):
+                curFld=curFld.replace('д.уч','д.',1)
+                tks[0]=curFld.split(fldD)
+            if curFld[0]!='д': 
+                curFld=f'д{fldD}{curFld}'
+                tks[0]=curFld.split(fldD)
                 #print("блят! дом не дом:",mk_el(tks,normi,i,inp),file=sys.stderr)
                 #HouseNotHouse.append([i,inp,mk_el(tks,normi,i,inp)]);  er[0]+=1;continue  
-            hd=tks[0]; hd[1:2]=hd[1].split()
+            hd=tks[0]
+            hd[1:2]=hd[1].split()
             if hd[2:] and hd[2]=='корп': # есть влитый корп но нах(пока) ибо 3 случая аж
                 if hd[3:]:
-                    if (hd[3].isdigit()or hd[3][:1].isdigit() ): # случай: г.Магнитогорск, пр-кт.Карла Маркса, д.141 корп.3А, кв.1
-                        hd[2]='/';hd[3]=hd[3].lower()
-                    else:hd[2]='';hd[3]=hd[3].lower()   #прим Буквы UPCASEить -"в надежде что а и А всёж одно"
-            hd[1]=''.join(hd[1:]);tks[0]=tks[0][:2]
+                    hd[2]='/' if (hd[3].isdigit()or hd[3][:1].isdigit() ) else ''  # / случай: г.Магнитогорск, пр-кт.Карла Маркса, д.141 корп.3А, кв.1
+                    hd[3]=hd[3].lower()   #прим Буквы UPCASEить -"в надежде что а и А всёж одно"
+            hd[1]=''.join(hd[1:])
+            tks[0]=tks[0][:2]
                 
             if False and len(tks[0])!=2:
                 self.setself(inp,i,"не просто номер:",normi,tks)
@@ -161,7 +168,7 @@ class NormiAdr():
             #if isM and ~hd[0].find('кв.']:hd[0]=hd[0][:-1] #ХЗ ['asdf'] а не просто 'asdf'!!!!нонХЗ
             
             if (p:=curFld.find('кв'))>0: #часть "суфикса"(при перечислении домов) заехало в секцию квартир, случаи W:  'г.Магнитогорск, ул.Костромская, д.484,2 уч, кв.0', 'г.Магнитогорск, п.Зеленая Долина, д.уч 91, 92, кв.0'
-                add,kv,curFld=curFld.partition(f'кв') # по условию add очевидно не пусто (да и не набор пробельных Imho - мыж пострипили  ведь да!? )
+                add,kv,curFld=curFld.partition('кв') # по условию add очевидно не пусто (да и не набор пробельных Imho - мыж пострипили  ведь да!? )
                 normi[-1]+=f'*{add[:-1].replace(bsD," ")}'
                 hd=tks[0]=(curFld:=kv+curFld).split(fldD)
                 None
@@ -201,7 +208,8 @@ class NormiAdr():
         pass
     def set_out_adrflds(self):
         #city,#street,#building,#BuildingExt,#app,#appExt
-        if self.normi and self.normi[-1]=='':self.normi=self.normi[:-1]
+        if self.normi and self.normi[-1]=='':
+            self.normi=self.normi[:-1]
         normi=self.normi
         self.city=(normi[0] if normi else '').title()
         self.street=('','')
@@ -238,7 +246,7 @@ class NormiAdr():
             tp,_,FullNum=(normi[3]).lower().partition('.')
             try:
                 Num=re.search(r'\d+', FullNum).group()
-            except Exception as e:
+            except Exception:
                 Num=''
             Sfx=FullNum[len(Num):]
             self.app=(Num,Sfx,tp)
@@ -271,7 +279,7 @@ class NormiAdr():
             #if normi[l]in['кв.СОИ','кв.А']:#пилАть,            normi[l]='кв.0СОИ'
             Num,Sfx,tp=self.app
             #rez=f'{str(Num).rjust(4," ")}{Sfx:30}@@@{tp:10}'
-            Renorm.append(''.join([pad(Num,-4,' '),pad(Sfx,30,' '),f'<<<{pad(tp,10," ")}']));
+            Renorm.append(''.join([pad(Num,-4,' '),pad(Sfx,30,' '),f'<<<{pad(tp,10," ")}']))
         if normi[(l:=l+1):]:#Ну а вдруг
             Renorm.append(self.tail)#normi[l:])
         
@@ -285,38 +293,44 @@ def restoreFld(l):  return fldD.join(e.strip() for e in l)#print(f"*1 {fldD=}",l
 def normFld(l):     return bsD.join(e.strip('.').strip() for e in l)
 
 def main(w=[],m=[]):
-    rez=[]; nonCity=Counter();nonStreetsHs=Counter();Ogryzk=Counter();
+    rez,nonCity,nonStreetsHs,Ogryzk=[],Counter(),Counter(),Counter()
     #byLvlStr=Counter(); #Tails=[];
-    tpStr=Counter();HsLong=Counter();SlashWithoutSpace=Counter();HouseNotHouse=[];
-    ur2=Counter();    Uch=[];
-    Iranga=[];OgryzkL=[];NONEIND=[];
-    er=[0];nor=[0];ukv=0;tls=0
+    tpStr,HsLong,HouseNotHouse=Counter(),Counter(),[]#;SlashWithoutSpace=Counter();
+    ur2,Uch,Iranga,OgryzkL,NONEIND=Counter(),[],[],[],[]
+    er,nor,ukv,tls=[0],[0],0,0
     def InserterList(v,Tp,out):
         for i,inp in v:
             x=NormiAdr(inp,Tp,i)
             ur2[f'{x.street[0]}_{x.street[1]}_{x.T}']+=1
             if not x.wrong:
-                out.append(x);nor[0]+=1
-            elif x.wrong=='всяко НЕ индекс':
-                    NONEIND.append([i,x.inp,x.mk_el()]);    er[0]+=1;continue
+                out.append(x)
+                nor[0]+=1
+                continue
+
+            er[0]+=1
+            if x.wrong=='всяко НЕ индекс':
+                    NONEIND.append([i,x.inp,x.mk_el()])
             elif x.wrong.startswith("ДруГо"):
-                    nonCity[restoreFld(x.tks[0])]+=1;
-                    Niknight.append(x.mk_el()); er[0]+=1;continue
+                    nonCity[restoreFld(x.tks[0])]+=1
+                    Niknight.append(x.mk_el())
             elif x.wrong.startswith("безУлич"):
-                    nonStreetsHs[restoreFld(x.tks[0])]+=1;
-                    HsForsaken.append(x.mk_el()); er[0]+=1;continue
+                    nonStreetsHs[restoreFld(x.tks[0])]+=1
+                    HsForsaken.append(x.mk_el())
             elif x.wrong=="что за огрызок":
-                    Ogryzk[restoreFld(x.tks[0])]+=1;tpStr[x.tks[0][0]]+=1
-                    OgryzkL.append([i,inp,x.mk_el()]);  er[0]+=1;continue
+                    tpStr[x.tks[0][0]]+=1
+                    Ogryzk[restoreFld(x.tks[0])]+=1
+                    OgryzkL.append([i,inp,x.mk_el()])
             elif x.wrong=="не просто номер:":
-                    HsLong[x.curFld()]+=1;  er[0]+=1;continue
-            elif x.wrong.startswith("nonForward ква"):
-                    nFor.append(x.mk_el()); continue
-            elif x.wrong.startswith("ну и ква"):
-                    NUiKva.append(x.mk_el());continue
-            pass
-    InserterList(w,'W',rez);
-    InserterList(m,'M',rez);
+                    HsLong[x.curFld()]+=1
+            else:
+                er[0]-=1
+                if x.wrong.startswith("nonForward ква"):
+                    nFor.append(x.mk_el())
+                elif x.wrong.startswith("ну и ква"):
+                    NUiKva.append(x.mk_el())
+
+    InserterList(w,'W',rez)
+    InserterList(m,'M',rez)
 
     print("['00'",*sorted(rez),']',sep=',\n')
     sh=''
