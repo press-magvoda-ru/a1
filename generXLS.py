@@ -95,7 +95,7 @@ def mainXLSsheetAndFresh(
             continue
         bI = 1
         bT = bI + 2
-        bC = 1 + 1  # len bundle is 6
+        # bC = 1 + 1  # len bundle is 6
         r, c, freR, freC = (
             0,
             0,
