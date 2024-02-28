@@ -1,45 +1,59 @@
-#some none flyed DataStruct's:
-#bdByAdr = defaultdict(list)
-#Wpa, Mpa = defaultdict(list), defaultdict(list)
-#emptyEls = []
+# some none flyed DataStruct's:
+# bdByAdr = defaultdict(list)
+# Wpa, Mpa = defaultdict(list), defaultdict(list)
+# emptyEls = []
 # outFileName = 'bdB.defaultdict.txt'
-#Wfa, Mfa = defaultdict(list), defaultdict(list)
+# Wfa, Mfa = defaultdict(list), defaultdict(list)
 # WfaMfa - таблица пересечений - список общих(парных) в возрастающем по Wfa номерам - пора бы и pandas подсобить сюдыть
 
 
-#some src changed on more portable(for pyinst):
-    #add2Hn(lfiles := sorted(os.popen(f'dir {src}/s/b|wsl grep pdf').read().splitlines(), key=weightMek, reverse=True))
-    #add2Hn(lfiles := sorted(os.popen(f'dir {src}/s/b|wsl grep -v Сопро|wsl grep pdf').read().splitlines(), key=weightWT, reverse=True))
+# some src changed on more portable(for pyinst):
+# add2Hn(lfiles := sorted(os.popen(f'dir {src}/s/b|wsl grep pdf').read().splitlines(), key=weightMek, reverse=True))
+# add2Hn(lfiles := sorted(os.popen(f'dir {src}/s/b|wsl grep -v Сопро|wsl grep pdf').read().splitlines(), key=weightWT, reverse=True))
 
 
 def FROMbuildWowDataStructureTMFROM(WW, MM, ofld):
-    import pprint,timing #FROM line for good hair and silk
-    from itertools import chain #FROM line ...
+    import pprint, timing  # FROM line for good hair and silk
+    from itertools import chain  # FROM line ...
+
     def mkAllByAdrs():
         AllByAdrs = []
         for k, v in chain(WW.items(), MM.items()):
-            AllByAdrs.append(v)  # или тут   # собственно здесь нужное отображение втулить из W|M строк адресса в "норм"
-        def simpleAdr(v):
-            return v.adr.replace('корп.', '%').replace(',кв.', ' ').replace(',д.', ' ')\
-                .replace(',д.', ' ').replace('.', ' ').split(' ', 1)[-1].replace(',', ' ').strip()
-        AllByAdrs.sort(key=simpleAdr)
-        print(timing.log('3.-1builded', ":AllByAdrs:"))
-        print('AllByAdrs:')
-        pprint.pprint(AllByAdrs, stream=(ou := open('AllByAdrs.dict', 'w')))
-        ou.close()
-        print(timing.log('3.-1', ":AllByAdrs"))
+            AllByAdrs.append(
+                v
+            )  # или тут   # собственно здесь нужное отображение втулить из W|M строк адресса в "норм"
 
-#from def buildWowDataStructureTM(WW, MM, ofld):
+        def simpleAdr(v):
+            return (
+                v.adr.replace("корп.", "%")
+                .replace(",кв.", " ")
+                .replace(",д.", " ")
+                .replace(",д.", " ")
+                .replace(".", " ")
+                .split(" ", 1)[-1]
+                .replace(",", " ")
+                .strip()
+            )
+
+        AllByAdrs.sort(key=simpleAdr)
+        print(timing.log("3.-1builded", ":AllByAdrs:"))
+        print("AllByAdrs:")
+        pprint.pprint(AllByAdrs, stream=(ou := open("AllByAdrs.dict", "w")))
+        ou.close()
+        print(timing.log("3.-1", ":AllByAdrs"))
+
+
+# from def buildWowDataStructureTM(WW, MM, ofld):
 def loc_temp():
     # saving rest from BdB (m then w cose kekeke :
-    if False:# пока без bdBEls
-        os.mkdir(unk := join(ofld, 'bdBEls'))
-        Tfrom = {'M': Mfrom, 'W': Wfrom}
+    if False:  # пока без bdBEls
+        os.mkdir(unk := join(ofld, "bdBEls"))
+        Tfrom = {"M": Mfrom, "W": Wfrom}
         for k, v in bdB.items():
             b = fitz.open()
-            if len(lst := v['l']) < 2:
+            if len(lst := v["l"]) < 2:
                 continue
-            c = {'W': 0, 'M': 0}
+            c = {"W": 0, "M": 0}
             for ll in lst:
                 e = ll[-1]
                 c[(t := e.Hn[0])] += 1
@@ -47,69 +61,93 @@ def loc_temp():
             unk2 = join(unk, f'w{c["W"]:02}m{c["M"]:02}')
             if not os.path.exists(unk2):
                 os.mkdir(unk2)
-            savepdf2(b, join(
-                unk2, f'w{c["W"]:02}m{c["M"]:02}_{b.page_count:>04}_{k.rjust(10,"_")}.pdf'))
+            savepdf2(
+                b,
+                join(
+                    unk2,
+                    f'w{c["W"]:02}m{c["M"]:02}_{b.page_count:>04}_{k.rjust(10,"_")}.pdf',
+                ),
+            )
 
-
-
-
-    
     # остатки(незамаскированные мековские)
-def WM_mergingFromOnePages(srcW, srcM, outfld):
-    import fitz,os,timing,rezname   # added in obsolete for suppress pylint
-    def getinfo():None              # added in obsolete for suppress pylint
-    bd={}                           # added in obsolete for suppress pylint
 
-    out2, count2, out1, count1, T, i = fitz.open(), 0, fitz.open(), 0, '2', 0
+
+def WM_mergingFromOnePages(srcW, srcM, outfld):
+    import fitz, os, timing, rezname  # added in obsolete for suppress pylint
+
+    def getinfo():
+        None  # added in obsolete for suppress pylint
+
+    bd = {}  # added in obsolete for suppress pylint
+
+    out2, count2, out1, count1, T, i = fitz.open(), 0, fitz.open(), 0, "2", 0
     srcW = srcW or f'{outfld}\\{"Wrez_2022-12-01 17-31-08"}'
     srcM = srcM or f'{outfld}\\{"Mrez_2022-12-05 18-28-45"}'
-    os.makedirs(outfld := outfld+f'\\{T}{rezname.rezname()}')
+    os.makedirs(outfld := outfld + f"\\{T}{rezname.rezname()}")
     os.chdir(outfld)
 
     def sw(doc, name):
         nonlocal i
         doc.save(name, garbage=2, deflate=True)
-        print(timing.log(i := i+1, name))
+        print(timing.log(i := i + 1, name))
         return fitz.open(), 0
 
-    def ReOp2(): nonlocal out2, count2;   out2, count2 = sw(out2,  f'2{nm}_{count2:05}.pdf')
-    def ReOp(t): nonlocal out1, count1;   out1, count1 = sw(out1, f'{t}{nm}_{count1:05}.pdf')
-    def res(t): count1 and ReOp(t)
-    def res2(): count2 and ReOp2(); res(t)
+    def ReOp2():
+        nonlocal out2, count2
+        out2, count2 = sw(out2, f"2{nm}_{count2:05}.pdf")
+
+    def ReOp(t):
+        nonlocal out1, count1
+        out1, count1 = sw(out1, f"{t}{nm}_{count1:05}.pdf")
+
+    def res(t):
+        count1 and ReOp(t)
+
+    def res2():
+        count2 and ReOp2()
+        res(t)
 
     def rm(f):
         try:
             os.remove(f)
         except OSError as e:
-            print(f'{f}!{e=}')
-    t, nm = {'NNN': ''}, ''
+            print(f"{f}!{e=}")
+
+    t, nm = {"NNN": ""}, ""
     for pg in sorted(os.listdir(srcW)):
-        Wp = f'{srcW}\\{pg}'
-        if t['NNN'] != (p := getinfo(pg))['NNN']:
+        Wp = f"{srcW}\\{pg}"
+        if t["NNN"] != (p := getinfo(pg))["NNN"]:
             res2()
             nm = f'pg_{(t:=p)["Package"]}'
-        if m := v[1]['pg'] if len(v := bd[p['els']]) == 2 and v[0]['Type'] != v[1]['Type'] else None:
+        if (
+            m := v[1]["pg"]
+            if len(v := bd[p["els"]]) == 2 and v[0]["Type"] != v[1]["Type"]
+            else None
+        ):
             out2.insert_pdf(fitz.open(Wp), links=0, annots=0, show_progress=0)
             out2.insert_pdf(
-                fitz.open(Mp := f'{srcM}\\{m}'), links=0, annots=0, show_progress=0)
+                fitz.open(Mp := f"{srcM}\\{m}"), links=0, annots=0, show_progress=0
+            )
             rm(Mp)
-            (count2 := count2+2) % 500 or ReOp2(count2)
+            (count2 := count2 + 2) % 500 or ReOp2(count2)
         else:
             out1.insert_pdf(fitz.open(Wp), links=0, annots=0, show_progress=0)
-            (count1 := count1+1) % 500 or ReOp('W')
+            (count1 := count1 + 1) % 500 or ReOp("W")
         rm(Wp)
     res2()
-    t, nm = {'NNN': ''}, ''
+    t, nm = {"NNN": ""}, ""
     for pg in sorted(os.listdir(srcM)):
-        if t['NNN'] != (p := getinfo(pg))['NNN']:
-            res('M')
+        if t["NNN"] != (p := getinfo(pg))["NNN"]:
+            res("M")
             nm = f'pg {"-".join((t:=p)["Package"].split("-",5)[:4])}'
         out1.insert_pdf(
-            fitz.open(Mp := f'{srcM}\\{pg}'), links=0, annots=0, show_progress=0)
+            fitz.open(Mp := f"{srcM}\\{pg}"), links=0, annots=0, show_progress=0
+        )
         rm(Mp)
-        count1 = count1+1
-    res('M')
-    print(srcW, srcM, outfld, 'Step \u03c0', "   π пиу пиу")
+        count1 = count1 + 1
+    res("M")
+    print(srcW, srcM, outfld, "Step \u03c0", "   π пиу пиу")
+
 
 """
 W, M, E, = {}, {}, {}

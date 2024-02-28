@@ -62,7 +62,9 @@ class Ui_MainWindow(object):
         self.b_srcM.setText(_translate("MainWindow", "Выбор Ката"))
         self.b_srcW.setText(_translate("MainWindow", "Выбор Лога"))
         self.b_fld.setText(_translate("MainWindow", "Кудыть"))
-        self.b_start_and_done.setText(_translate("MainWindow", "Запустить компоновку квитанций"))
+        self.b_start_and_done.setText(
+            _translate("MainWindow", "Запустить компоновку квитанций")
+        )
         self.lb_srcM.setText(_translate("MainWindow", "путь до мэк"))
         self.lb_srcW.setText(_translate("MainWindow", "путь до водотеплухи"))
         self.lb_fld.setText(_translate("MainWindow", "путь до результатом доволен"))

@@ -10,6 +10,7 @@ from reparseWxMx import PgIsEmpy, lstInWithExtention, Deliveries
 import rezname
 import string
 from collections import Counter
+
 fscv = "zipuem.csv"
 
 Uprs1st = [
@@ -34,7 +35,6 @@ def TrackByName(name):
 
 
 def openZdata(fld="."):
-
     fo = open(os.path.join(fld, "zipuemWithData.py"), "wt")
     # print(inspect.getsource(zipuem),file=fo)
     print(
@@ -142,7 +142,7 @@ def mainXLSsheetAndFresh(
         OnlyTotals or wb.create_sheet(pdfname)
         wf and wf.create_sheet(pdfname)
 
-        #pdfPath = "$".join(sp[:-1])
+        # pdfPath = "$".join(sp[:-1])
         print(fl := fl + 1, fullPathFile)  # , end=' ') print(pdfPath)
         putTot(2, fl, pdfname)
 
