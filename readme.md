@@ -52,6 +52,7 @@ os.system(f'(tm&&pyinstaller splitingOfMandV.py  -n splitingOfMandV{rezname()} -
  * PyQt5 для гуя 
  * openpyxl
  * pandas - саммый децл для кой какой статистики
+ *  собирать под 3.10-3.12(3.13 ...) 
  * ...
  
 зы  - это набросок
