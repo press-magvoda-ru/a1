@@ -5,6 +5,7 @@ import os
 import sys
 import reparseWxMx
 from reparseWxMx import PgIsEmpy, lstInWithExtention, Deliveries
+from reparseWxMx import bundle  # noqa: F401 -eval(stat) use it :)
 
 # import fitz
 import rezname

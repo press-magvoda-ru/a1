@@ -37,7 +37,7 @@ from distribforzip import zuzazip
 print(__LINE__.f_lineno)
 print(__LINE__.f_lineno)
 # +1 or unk# +1 for de_ug purpose:
-inN, de_ug = os.cpu_count() + 1, 0  # +1 #
+inN, de_ug = os.cpu_count() + 1, 0   #+1 #
 VRS = rezname.rezname()
 VRSbs = splitext(basename(sys.argv[0]).split("_", 1)[-1])[
     0
@@ -136,7 +136,10 @@ def mainUI(in_srcM, in_srcW, in_fld):
             sys.exit()
 
     app = QtWidgets.QApplication(sys.argv)
-    mn_Window().show()
+    w=mn_Window()
+    w.show()
+    
+    #sys.exit(app.exec_());
     app.exec()
     return ["", "", ""]
 
@@ -189,8 +192,8 @@ Wpages2time = (
 )  # не λ ибо нужно[]; # lambda n:n # (0.004+0.006/2000*n)*n for n in range(9999)}
 
 
-def SumMap(wf, l):
-    return sum(map(wf, l))
+def SumMap(wf, a):
+    return sum(map(wf, a))
 
 
 def toNparts(elems: list, nparts: int, pages2weight, pages):
@@ -430,7 +433,7 @@ def inSubmergeW(prt, ofld, rname):
     WMdocByHn = {}
     print(
         f"{prt.index=:^3} weght:{prt.sum[0]:^17.3f} {pid=:^7}len={len(prt.lst):>4} ",
-        f" ".join(f"{len(f.ll)}" for f in prt.lst),
+        " ".join(f"{len(f.ll)}" for f in prt.lst),
         end=" ENDWW\n",
     )
     ePg = makeEmptyPg()
@@ -438,8 +441,8 @@ def inSubmergeW(prt, ofld, rname):
         Hn = e.Hn
         ewm = e.ll
 
-        def kkey(l):
-            return l[0] and forCMP(l[0].adr) or forCMP(l[1].adr, "M")
+        def kkey(a):
+            return a[0] and forCMP(a[0].adr) or forCMP(a[1].adr, "M")
 
         onamePdf = f"{join(ofld,rnm:=Hn[2:])}.pdf"
         if rnm[0] in Uprs1st:
