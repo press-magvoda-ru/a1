@@ -243,36 +243,36 @@ def mainXLSsheetAndFresh(
             PgIsEmpy(x) and putfre(freR := freR + 1, x.pN + 1)
             PgIsEmpy(y) and putfre(freR := freR + 1, y.pN + 1)
             r += 1
-            l = 0
+            collum = 0
             # cell = sheet.cell(row=(r := r+1), column=(c := c+1))
             # els = x.els
             # cell.value = f'=HYPERLINK("{pdfPath}.pdf","{els}")'
             # cell.style = "Hyperlink"
             pgTotR += 1
             putPgTot(1, pdfname)
-            putAndPgTot(l := l + 1, f"={x.pN+1}")
-            putAndPgTot(cpaW := (l := l + 1), x.pa)
+            putAndPgTot(collum := collum + 1, f"={x.pN+1}")
+            putAndPgTot(cpaW := (collum := collum + 1), x.pa)
             wpaW = max(wpaW, len(x.pa))
             putAndPgTot(
-                c1 := (l := l + 1),
+                c1 := (collum := collum + 1),
                 x.adr.replace("%", "/").rjust(w1 := max(w1, len(x.adr))),
             )
-            putAndPgTot(cSqsW := (l := l + 1), x.sq)  # .rjust
+            putAndPgTot(cSqsW := (collum := collum + 1), x.sq)  # .rjust
             (wSqsW := max(wSqsW, len(x.sq)))  # )
-            putAndPgTot(cuuuW := (l := l + 1), x.u)
-            putAndPgTot(l := l + 1, x.els)
-            putAndPgTot(l := l + 1, x.adrNorm)
+            putAndPgTot(cuuuW := (collum := collum + 1), x.u)
+            putAndPgTot(collum := collum + 1, x.els)
+            putAndPgTot(collum := collum + 1, x.adrNorm)
             z = y
-            putAndPgTot(l := l + 1, z.adrNorm)
-            putAndPgTot(l := l + 1, z.els)
-            putAndPgTot(cuuuM := (l := l + 1), z.u)
+            putAndPgTot(collum := collum + 1, z.adrNorm)
+            putAndPgTot(collum := collum + 1, z.els)
+            putAndPgTot(cuuuM := (collum := collum + 1), z.u)
             putAndPgTot(
-                cSqsM := (l := l + 1), z.sq.rjust(wSqsM := max(wSqsM, len(z.sq)))
+                cSqsM := (collum := collum + 1), z.sq.rjust(wSqsM := max(wSqsM, len(z.sq)))
             )
-            putAndPgTot(l := l + 1, z.adr.replace("%", "/"))
-            w2, c2 = max(w2, len(z.adr)), l
-            putAndPgTot(cpaM := (l := l + 1), z.pa)
-            putAndPgTot(l := l + 1, f"={z.pN+1}")
+            putAndPgTot(collum := collum + 1, z.adr.replace("%", "/"))
+            w2, c2 = max(w2, len(z.adr)), collum
+            putAndPgTot(cpaM := (collum := collum + 1), z.pa)
+            putAndPgTot(collum := collum + 1, f"={z.pN+1}")
 
             (D := x.Deliv or y.Deliv)
             for i in Deliveries.split("&"):
@@ -282,13 +282,13 @@ def mainXLSsheetAndFresh(
             else:
                 DD = D  # defMekDeliv
             putAndPgTot(
-                l := l + 1, DD
+                collum := collum + 1, DD
             )  # выбор из управляек и фолбэк Ливицкая здесь или при сборе ?
             Kontrs[V := "&".join([x.UrFcs, y.UrFcs]).strip("&")] += 1
-            putAndPgTot(l := l + 1, V)
+            putAndPgTot(collum := collum + 1, V)
             for j in Urs.split("&"):
                 putAndPgTot(
-                    l := l + 1, f"={int(not not ~V.find(j))}"
+                    collum := collum + 1, f"={int(not not ~V.find(j))}"
                 )  # "пока так" если имена могут префиксоватся что искать &ndl& с предварительным оборачиванием &V&
         if wf:
             putfre(0, f"{freR}")
@@ -314,7 +314,7 @@ def mainXLSsheetAndFresh(
         sheet.column_dimensions[alf[cuuuM - 1]].width = 3 + 3
         sheet.column_dimensions[alf[cSqsM - 1]].width = wSqsM
         sheet.column_dimensions[alf[c2 - 1]].width = w2
-        sheet.column_dimensions[alf[l - 1]].width = len(f"{100}") + 1
+        sheet.column_dimensions[alf[collum - 1]].width = len(f"{100}") + 1
 
     # выхлоп oBuhm:
     def toBuhm():  # за локальность имён!
