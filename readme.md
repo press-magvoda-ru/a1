@@ -1,3 +1,5 @@
+https://github.com/press-magvoda-ru/a1/blob/mainOfdyt/splitingOfMandV.py
+
 (проект в стадии интенсивного прихорашивания)
 
 заплатка v.0.0.0 : 
