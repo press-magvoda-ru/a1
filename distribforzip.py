@@ -84,4 +84,5 @@ def zuzazip(fld=".", sz=600_000_000):
 #     place=fld or r'C:\AAA\MWrez_2023-10-25__10-41-33\WMpdfs' or r'C:\AAA\MWrez_2023-10-25__11-00-15\WMpdfs'
 #     zuzazip(place)
 if __name__ == "__main__":
-    zipper(r"C:\Users\1\Downloads\Zall_МЭК\wrk\a\z")
+    import sys
+    zipper(dirname(sys.argv[-1]))
