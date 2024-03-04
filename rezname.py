@@ -18,8 +18,8 @@ def rezname():
 # чисто обвязка:
 
 
-def SimpleJoinPdffromListOf(l, path, doc):
-    for i, pdf in enumerate(l):
+def SimpleJoinPdffromListOf(lst, path, doc):
+    for i, pdf in enumerate(lst):
         doc.insert_pdf(fitz.open(f"{path}{pdf}"), links=0, annots=0, show_progress=0)
         print(timing.log(i, pdf))
     return doc
@@ -27,18 +27,8 @@ def SimpleJoinPdffromListOf(l, path, doc):
 
 def genDoublesDict(frm, to, fl="wTotB"):
     w = DictFromFile(join(frm, fl))
-
     v = Pg(*range(len(Pg._fields)))
-    # with open(to,'w') as file:
-    #     print('{',file=file)
-    #     for k,v1 in w.items():
-    #         if v==v1:
-    #             print(f'{k-1}:{v}',file=file)
-    #             print(f'{k}:{v}',file=file)
-    #         v=v1
-    #     print('}',file=file)
     oldout = sys.stdout  # Q?:свой контекстный менеджер который замещает(стеково) stdout и  востанавливает по выходу из with
-    # e=Pg(*["N/A"]*7)
     with open(to, "w") as sys.stdout:
         print("{")
         for k, v1 in w.items():

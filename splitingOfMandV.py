@@ -1,3 +1,18 @@
+"""главный модуль:
+программа :
+Совмещения квитанций двух коммунальных организаций - на входе 2 устоявшихся(практикой и иными мотивами)
+дерева pdf-файлов готовых к печати в типографию
+на выходе  pdf-файлы совмещённых квитанции в виде набора zip архивов  готовые к отправке в типографию
+
+цель: уменьшение издержек на печать и доставку бумажных квитанций путём сокращения "пустых" мест
+
+способы:
+* совмещает на один лист(две страницы)  страницы из 1G(~280 pdf файлов)(~200к квитанций) и ~8G(~140файлов)(~200к квитанций)
+* переупорядочивает листы в адресном порядке
+*
+* общее время исполнения менее 20 минут (на 4яд/8поточном) путём распараллеливания этапа склейки  посредством multiprocessing
+"""
+
 import multiprocessing as mp
 import os
 import pprint
@@ -9,8 +24,6 @@ from os.path import basename, dirname, join, exists, splitext
 import fitz
 import rezname
 import timing
-
-# import os
 from reparseWxMx import (
     Hn,
     Pg,
@@ -23,9 +36,8 @@ from reparseWxMx import (
     rname,
     makeEmptyPg,
     lstInWithExtention,
-)  # makeFakeNxtPg,
+)
 
-# from itertools import chain
 from generXLS import makeXLS, typefilesOfdata, Uprs1st, prf
 import inspect
 
@@ -33,11 +45,8 @@ __LINE__ = inspect.currentframe()
 from NormiW import NormiAdr as forCMP
 from distribforzip import zuzazip
 
-# from exceptlst import Except
 print(__LINE__.f_lineno)
-print(__LINE__.f_lineno)
-# +1 or unk# +1 for de_ug purpose:
-inN, de_ug = os.cpu_count() + 1, 0   #+1 #
+inN, de_ug = os.cpu_count() + 1, 0  # +1 #
 VRS = rezname.rezname()
 VRSbs = splitext(basename(sys.argv[0]).split("_", 1)[-1])[
     0
@@ -52,11 +61,14 @@ def mkmk(fld):  # утилита для mainUI
 
 
 def mainUI(in_srcM, in_srcW, in_fld):
+    """простенький pyQt_gui(TODO flet) для базированного пользователя"""
     from PyQt5 import QtWidgets, uic
 
     try:
         frm_cls = uic.loadUiType(f"{os.path.dirname(__file__)}\\guiForPairing.ui")[0]
     except Exception:
+        # TODO по не выясненым причинам .exe полученное при промощи pyinstaller не всегда видет .ui файл поэтому
+        # guiForPairing.py есть автоконвертированный(при билдинге ) в py guiForPairing.ui
         from guiForPairing import Ui_MainWindow as frm_cls
 
     class mn_Window(QtWidgets.QMainWindow, frm_cls):
@@ -116,20 +128,15 @@ def mainUI(in_srcM, in_srcW, in_fld):
             # HERE use SAGEread for
             nm = ""
             if not de_ug:
-                M_data_spliting(
-                    srcM, fld
-                )  # если чек т.е есть mTotB был то воспользоваться УЖОЙным M_
+                M_data_spliting(srcM, fld)
                 W_data_spliting(srcW, fld)
-
                 pprint.pprint(
                     rname, stream=open(join(fld, name2str(f"{rname=}")), "w"), width=333
-                )  # nero are
+                )
                 nm, unk = WM_mergeFromMultiPagePdf(fld, fld, fld)
             else:  # de_ug yap
                 rootTotS = r"C:\AAA\MWrez_2023-10-17__15-02-36"  # r'C:\AAA\MWrez_2023-05-22__15-19-38' #r'C:\AAA\MWrez_2023-05-19__14-06-31' #r'C:\AAA\MWrez_2023-05-18__11-17-51' #r'C:\AAA\MWrez_2023-05-11__14-28-22' #r'C:\AAA\MWrez_2023-05-10__13-54-07' #r'C:\AAA\MWrez_2023-04-06__18-21-47' #r'C:\AAA\MWrez_2023-04-06__13-10-57' #r'C:\AAA\MWrez_2023-04-06__11-43-38' #r'C:\AAA\MWrez_2023-04-05__16-26-04' #r'C:\AAA\MWrez_2023-04-05__13-59-22' #r'C:\AAA\MWrez_2023-03-29__22-47-56' #r'C:\AAA\MWrez_2023-03-29__19-26-09' #r'c:\aaa\MWrez_2023-03-29__10-11-48' #r'C:\AAA\MWrez_2023-03-20__09-53-55' #r'C:\AAA\MWrez_2023-03-07__15-52-36' #r'C:\AAA\MWrez_2023-03-06__14-40-51' #r'C:\AAA\MWrez_2023-03-06__13-36-47' #r'C:\AAA\MWrez_2023-02-28__15-47-32' #r'C:\AAA\MWrez_2023-02-28__13-53-17' #r'C:\AAA\MWrez_2023-02-17__14-35-06' #r"C:\AAA\MWrez_2023-02-16__08-35-37"
-                nm, unk = WM_mergeFromMultiPagePdf(
-                    rootTotS, rootTotS, fld
-                )  # de_ug of doubling All
+                nm, unk = WM_mergeFromMultiPagePdf(rootTotS, rootTotS, fld)
             os.system(f'start "" "{nm[0]}"')
             zuzazip(unk)
             nm[1] and os.system(f'start "" "{nm[1]}"')  # если wf is None
@@ -138,8 +145,6 @@ def mainUI(in_srcM, in_srcW, in_fld):
     app = QtWidgets.QApplication(sys.argv)
     w = mn_Window()
     w.show()
-
-    # sys.exit(app.exec_());
     app.exec()
     return ["", "", ""]
 
@@ -197,7 +202,10 @@ def SumMap(wf, a):
 
 
 def toNparts(elems: list, nparts: int, pages2weight, pages):
-    """Разбивка elems на nparts  почти равных по sum(pages2weight[pages(e)] for e in rez[j].lst) для каждой из частей j"""
+    """балансирование наборов для уменьшения наибольшего времени  из N исполнителей
+    Разбивка elems на nparts  почти равных по sum(pages2weight[pages(e)] for e in rez[j].lst) для каждой из частей j
+    TODO возможно в itertools есть(к моменту чтения этого комента) нужный вариант пакетирования наборов в почти равные корзины
+    """
     rez = [Nparts([0], [], i + 1) for i in range(nparts)]
     for e in elems:
         (v := min(rez)).sum[0] += pages2weight[pages(e)]
@@ -206,6 +214,10 @@ def toNparts(elems: list, nparts: int, pages2weight, pages):
 
 
 def inSubProcM(Tp, base, prt):
+    """ процесс наполенения файла образующего часть определение словаря  квитанций  типа М
+        TODO спутанно с генерацией участка словаря - в случае прямого письма в БД( Postgress)-
+    станет прямолинейней
+    """
     i, pid = base, os.getpid()
     print(f">>{Tp} from {prt.index} {os.getpid()} {os.getcwd()}")
     pagestxt = open(f"M{prt.index:>03}", "w")  # {pid:>6}
@@ -233,23 +245,14 @@ def inSubProcM(Tp, base, prt):
 
 
 def M_data_spliting(src, of):
-    (
-        src,
-        Tp,
-    ) = (
-        dirend(src),
-        "M",
-    )
-    stdout, sys.stdout = (
-        sys.stdout,
-        open((of := of + f"\\_{Tp}{rezname.rezname()}") + ".txt", "w"),
-    )
+    """сбор в несколько процессов  inSubProcM значимых сведений из квитанций типа М"""
+    src, Tp, stdout = dirend(src), "M", sys.stdout
+    sys.stdout = open((of := of + f"\\_{Tp}{rezname.rezname()}") + ".txt", "w")
+
     print(f">{Tp} start: {datetime.now()}")
     print(timing.log("mainpid", f":{mainpid=:05} {inN=:^20}"), flush=True)
     (lfiles := sorted(lstInWithExtention(src), key=weightMek, reverse=True))
-    MlFilteredFiles = [
-        e for e in lfiles if basename(e).split(".", 1)[0].split("-")[5:]
-    ]  # ПYAтыЙ йэлемент мила
+    MlFilteredFiles = [e for e in lfiles if basename(e).split(".", 1)[0].split("-")[5:]]
     add2Hn(MlFilteredFiles, Tp)
     (
         base,
@@ -284,6 +287,10 @@ def M_data_spliting(src, of):
 
 
 def inSubProcW(Tp, base, prt):
+    """ процесс наполенения файла образующего часть определение словаря  квитанций  типа W
+        TODO спутанно с генерацией участка словаря - в случае прямого письма в БД( Postgress)-
+    станет прямолинейней
+    """
     i, pid = base, os.getpid()
     print(f">>{Tp} from {prt.index} {os.getpid()} {os.getcwd()}")
     pagestxt = open(f"W{prt.index:>03}", "w")  # {pid:>6}
@@ -305,17 +312,9 @@ def inSubProcW(Tp, base, prt):
 
 
 def W_data_spliting(src, of):
-    (
-        src,
-        Tp,
-    ) = (
-        dirend(src),
-        "W",
-    )
-    stdout, sys.stdout = (
-        sys.stdout,
-        open((of := of + f"\\_{Tp}{rezname.rezname()}") + ".txt", "w"),
-    )
+    """сбор в несколько процессов inSubProcW значимых сведений из квитанций типа W"""
+    src, Tp, stdout = dirend(src), "W", sys.stdout
+    sys.stdout = open((of := of + f"\\_{Tp}{rezname.rezname()}") + ".txt", "w")
     print(f">{Tp} start:{datetime.now()}")
     print(timing.log("mainpid", f":{mainpid=:05} {inN=:^20}"), flush=True)
     add2Hn(
@@ -362,31 +361,19 @@ def main(root, rout=None):
     mainUI(join(root, "_mek"), join(root, "_w_t"), join(rout, f"MW{VRS}"))
 
 
-# различные DS(ах если бы - чисто воборьи и пушки) для быстро-быстрого паренья:
-(
-    W,
-    M,
-) = (
-    None,
-    None,
-)
-WbyM, MbyW = {}, {}  # WbyM is  { HnW:{HnM:{номерв(HnM):номерв(HnW)}}} ...
+WbyM, MbyW = {}, {}
 
 
 def WM_mergeFromMultiPagePdf(srcW, srcM, outfld):
-    # return
-    global W, M  # , rname
+    """сопоставление  на основе собранных wTotB mTotB словарей квитанций"""
     if de_ug:
         global rname
-        rname = DictFromFile(
-            join(srcW or srcM, "rname")
-        )  # DictFromFile(join(root,'rname'))
-    nm, unk = buildDSmakingCake(
-        W := DictFromFile(join(srcW, "wTotB")),
-        M := DictFromFile(join(srcM, "mTotB")),
+        rname = DictFromFile(join(srcW or srcM, "rname"))
+    return buildDSmakingCake(
+        DictFromFile(join(srcW, "wTotB")),
+        DictFromFile(join(srcM, "mTotB")),
         outfld,
     )
-    return nm, unk
 
 
 pdfnum = 0
@@ -419,12 +406,9 @@ def fromTo(doEmpty, src, pN, oname, x, dst):
 
 
 def makeCurPg(pN, oname, v):
-    # as like in makeFakeNxtPg
     t = {v._fields[i]: v[i] for i, fld in enumerate(v)}
-    t["pN"], t["Hn"] = (
-        pN,
-        oname,
-    )
+    t["pN"] = pN
+    t["Hn"] = oname
     return Pg(*t.values())
 
 
@@ -505,7 +489,9 @@ def inSubmergeW(prt, ofld, rname):
                             WMdocByHn[y.Hn] = fitz.open(rname[y.Hn])
                     except Exception as z:
                         raise (z)
-                    t.append(fromTo(right, WMdocByHn[y.Hn], pN := pN + 1, onamePdf, y, out))
+                    t.append(
+                        fromTo(right, WMdocByHn[y.Hn], pN := pN + 1, onamePdf, y, out)
+                    )
 
             x and t.append(fromTo(left, inp, pN := pN + 1, onamePdf, x, out))
             doY()
@@ -715,9 +701,7 @@ def buildDSmakingCake(WW, MM, ofld):
 if __name__ == "__main__":
     mp.freeze_support()
     root = rezname.getArgOr(1, dirname(dirname(__file__)), "Dir")
-    SAGAread = rezname.getArgOr(
-        2, ["doParseMEK", "doParseWT", "doParing"]
-    )  # for real """TODO import ast;ast.literal_eval"""
+    #SAGAread = rezname.getArgOr(2, ["doParseMEK", "doParseWT", "doParing"])
     print(root)
     print(":\t Начало", timing.log("", f"{timing.pred-timing.base}"))
     main(join(root, ""))

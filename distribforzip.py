@@ -48,10 +48,10 @@ def mover(fld, menu):
     os.makedirs(z)
     p = ""
     sq = [v for v in open(join(fld, menu)).read().split("\n") if v]
-    for l in sq:
-        if (fn := l.strip()) == l:
-            os.makedirs(join(z, l))
-            p = l
+    for v in sq:
+        if (fn := v.strip()) == v:
+            os.makedirs(join(z, v))
+            p = v
         else:
             (a := join(fld, fn), b := join(z, p, fn))
             os.rename(a, b)
@@ -69,7 +69,7 @@ def zipper(fld):  # get abspath
                     s = join(FOarc, fn)
                     arc.write(s, fn)
     system(f'move /y "{fld}\\*.zip" "{dirname(fld)}"')
-
+    #TODO change to using os.replace() for v in os.walk ... *.zip 
 
 def zuzazip(fld=".", sz=600_000_000):
     rez = DistribResultByChanksForFollowZiping(fld, sz)
