@@ -136,10 +136,10 @@ def mainUI(in_srcM, in_srcW, in_fld):
             sys.exit()
 
     app = QtWidgets.QApplication(sys.argv)
-    w=mn_Window()
+    w = mn_Window()
     w.show()
-    
-    #sys.exit(app.exec_());
+
+    # sys.exit(app.exec_());
     app.exec()
     return ["", "", ""]
 
@@ -405,6 +405,7 @@ def savepdfW(doc, name):
         doc.save(name, garbage=2, deflate=True)
         pdfnum = pdfnum + 1
         print(timing.log(f"№{pdfnum:>03}", name))
+        p
 
 
 def fromTo(doEmpty, src, pN, oname, x, dst):
@@ -490,26 +491,26 @@ def inSubmergeW(prt, ofld, rname):
         pagestxt.write("[\n")
         out = fitz.open()
         ewm[:] = sorted(ewm, key=kkey)  # lol всёж adr f а не adrNorm
-        l, r = e.cs[1] + e.cs[2], e.cs[0] + e.cs[2]
+        left, right = e.cs[1] + e.cs[2], e.cs[0] + e.cs[2]
         for x, y in ewm:
             t = []
 
             def doY():
                 nonlocal pN
                 if not y:
-                    t.append(fromTo(r, 0, pN := pN + 1, onamePdf, ePg, out))
+                    t.append(fromTo(right, 0, pN := pN + 1, onamePdf, ePg, out))
                 else:
                     try:
                         if y.Hn not in WMdocByHn:
                             WMdocByHn[y.Hn] = fitz.open(rname[y.Hn])
                     except Exception as z:
                         raise (z)
-                    t.append(fromTo(r, WMdocByHn[y.Hn], pN := pN + 1, onamePdf, y, out))
+                    t.append(fromTo(right, WMdocByHn[y.Hn], pN := pN + 1, onamePdf, y, out))
 
-            x and t.append(fromTo(l, inp, pN := pN + 1, onamePdf, x, out))
+            x and t.append(fromTo(left, inp, pN := pN + 1, onamePdf, x, out))
             doY()
             x or t.append(
-                fromTo(l, 0, pN := pN + 1, onamePdf, ePg, out)
+                fromTo(left, 0, pN := pN + 1, onamePdf, ePg, out)
             )  # x and inp,pN,onamePdf,x or ePg,out
             x or (t := [t[1], t[0]])
             pagestxt.write("[")
@@ -582,15 +583,15 @@ def buildDSmakingCake(WW, MM, ofld):
             os.makedirs(pH, exist_ok=1)
             if exists(fn := join(pH, "Hints.txt")):
                 for z in open(fn).readlines():
-                    if l := (z := z.strip("\n")).split("#")[0].replace(" ", ""):
-                        if (l := l.partition("+"))[1] == "+":
-                            edges[l[2]].add(l[0])
+                    if line := (z := z.strip("\n")).split("#")[0].replace(" ", ""):
+                        if (line := line.partition("+"))[1] == "+":
+                            edges[line[2]].add(line[0])
                             old_edges.append(z)
-                        elif (l := l[0].partition("-"))[1] == "-":
-                            bad[l[2]].add(l[0])
+                        elif (line := line[0].partition("-"))[1] == "-":
+                            bad[line[2]].add(line[0])
                             old_bad.append(z)
                         else:
-                            uni.add(l[0])
+                            uni.add(line[0])
                             old_uni.append(z)
 
         def toOut(ouF, w, m, i=2):
@@ -669,8 +670,8 @@ def buildDSmakingCake(WW, MM, ofld):
                 toOut(ouF, 0, m, 0)
 
         with open(join(pH, VRSbs + VRS + ".txt"), "w") as fn:
-            for l in old_edges, old_bad, old_uni, new_edges:
-                print(*l, sep="\n", file=fn)
+            for v in old_edges, old_bad, old_uni, new_edges:
+                print(*v, sep="\n", file=fn)
         ff = open("B2ouf", "w")
         for k in B2Ouf:
             if len(zzz := B2Ouf[k]) > 1:
@@ -701,9 +702,10 @@ def buildDSmakingCake(WW, MM, ofld):
     print(timing.log("4_1", ":MbyW"))
     pprint.pprint(WbyM, width=99999999, stream=open(join(ofld, "WbyM"), "w"))
     print(timing.log("4_2", ":WbyM"))
-    from debundle import getS
 
-    getS(unk)
+    import debundle
+
+    debundle.getS(unk)
     rez, unk = makeXLS(unk, VRSbs), join(unk, "")
     os.system(f'del "{unk}*{typefilesOfdata}"')
     print(timing.log("4_E", "Отсохронялись"))
