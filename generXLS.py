@@ -234,6 +234,9 @@ def mainXLSsheetAndFresh(
 
             putAndPgTot(c := c + 1, "Доставщик", isFst)
 
+            putAndPgTot(c := c + 1, "ИЖЗ:1,МКД:0", isFst)
+
+
             putAndPgTot(c := c + 1, "ВсеКонтрА", isFst)
             for j in Urs.split("&"):
                 putAndPgTot(c := c + 1, f"{j}:", isFst)
@@ -284,6 +287,14 @@ def mainXLSsheetAndFresh(
             putAndPgTot(
                 collum := collum + 1, DD
             )  # выбор из управляек и фолбэк Ливицкая здесь или при сборе ?
+            
+            # тип получателя(частник али нет ):
+            #TODO
+            putAndPgTot(
+                collum := collum + 1, (y or x).isPriv #Из Pgs как? 
+            )
+            
+            
             Kontrs[V := "&".join([x.UrFcs, y.UrFcs]).strip("&")] += 1
             putAndPgTot(collum := collum + 1, V)
             for j in Urs.split("&"):

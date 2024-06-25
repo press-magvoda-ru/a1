@@ -8,7 +8,7 @@ from exceptlst import isBadMek
 
 # print('попячено из a1/splitingOfMandV.py  c дополнением лицевых и площади')
 # CluesOfPage('W',els,uuu,adr,src,pageNum,realuuu if realuuu!=uuu else ''))
-Pg = namedtuple("Pg", "pN Hn u els pa sq adr adrNorm UrFcs Deliv isBad")
+Pg = namedtuple("Pg", "pN Hn u els pa sq adr adrNorm UrFcs Deliv isBad isPriv")
 useExceptlst = False
 
 bundle = namedtuple("bundle", "m w P kvt sps tot")
@@ -29,12 +29,12 @@ def lstInWithExtention(src, ext=".pdf", non="___"):
 def makeEmptyPg():
     # return Pg('','','','ПустоЛист','','','')
     return Pg(
-        "", "", "", "ПустоСтр", "", "", "", "", "", "", ""
+        "", "", "", "ПустоСтр", "", "", "", "", "", "", "", "mkEpg"
     )  # возвращать Стр ибо сторона а не дубль- TODO посмотреть где используется литерал ПустоЛист
 
 
 def PgIsEmpy(p: Pg):
-    return p.els == "".join(p[2:-1])  # заморочка с int isBad
+    return p.els == "".join(p[2:-2])  # заморочка с int isBad и добавленным 20240604 isPriv
 
 
 def makeFakeNxtPg(v: Pg):
@@ -107,8 +107,9 @@ def prsM(page, file, pN):
     adr = page.split("\n", 1)[0].strip()  # сырой адрес МЭК
     adrNorm = SmplAdr(adr, "M").smpl()
     isBad = useExceptlst and isBadMek(adr)
+    isPriv=int(not(('101'<=(h:=file[2:5])<='299') or h in ['021','028'])) #like M-028-
     if not (tail := page.split("Лицевой счет:", 1)[1]):
-        return Pg(pN, file, "", "", "", "", adr, adrNorm, UrFcs, defMekDeliv, isBad)
+        return Pg(pN, file, "", "", "", "", adr, adrNorm, UrFcs, defMekDeliv, isBad, isPriv)
     # print(l)
     pa = tail.split("\n", 1)[0].strip()  # ''.join([e for e in l.split('\n',1)[0]
     Deliv = tail.split("\n", 2)[1].strip()
@@ -123,7 +124,7 @@ def prsM(page, file, pN):
     ].replace(".", "")  # ?method  remove all from {. }
     if (rez := timing.fltru(uuu)) != uuu:
         uuu = f"{rez}|{uuu}"
-    return Pg(pN, file, uuu, els, pa, sqS, adr, adrNorm, UrFcs, defMekDeliv, isBad)
+    return Pg(pN, file, uuu, els, pa, sqS, adr, adrNorm, UrFcs, defMekDeliv, isBad, isPriv)
 
 
 _cache_ofprsW, b_c = {}, {ord(c): None for c in " \xa0"}
@@ -205,6 +206,6 @@ def prsW(page, src, pageNum):
     adrNorm = SmplAdr(adr, "W").smpl()
     return (
         _cache_ofprsW := Pg(
-            pageNum, src, uuu, els, pa, sqS, adr, adrNorm, UrFcs, Deliv, 0
+            pageNum, src, uuu, els, pa, sqS, adr, adrNorm, UrFcs, Deliv, 0, 100 
         )
     )

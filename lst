@@ -1,6 +1,7 @@
 debundle.py
 generXLS.py
 guiForPairing.ui
+guiForPairing.py
 logo.ico
 reparseWxMx.py
 rezname.py

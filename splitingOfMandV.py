@@ -708,7 +708,7 @@ def buildDSmakingCake(WW, MM, ofld):
 
     debundle.getS(unk)
     rez, unk = makeXLS(unk, VRSbs), join(unk, "")
-    os.system(f'del "{unk}*{typefilesOfdata}"')
+    # os.system(f'del "{unk}*{typefilesOfdata}"') #дебужно посмотреть бандл файлы
     print(timing.log("4_E", "Отсохронялись"))
     return rez, unk
 
