@@ -15,10 +15,12 @@ from collections import Counter
 fscv = "zipuem.csv"
 
 Uprs1st = [
-    "№",
-    "Г",
-    "У",
+    "#",#"№",
+    "G",#"Г",
+    "U",#"У",
 ]  # "Пач-ин" #!!! ориентир наличие № :) AZAZA # in SplitingOfMandV and generXLS same this line (filtr)
+
+
 prf = "000-"
 
 
@@ -27,10 +29,10 @@ def TrackByName(name):
     from zipuem import Track
 
     if re.search(r"\(.*\)", name):
-        return Track.Непечатное
+        return Track.NonPrintable
     if name[0] in Uprs1st:
         return Track.IT
-    return Track.Левицкой
+    return Track.Levickoy
     # if name.startswith(prf):return Track.Левицкой
     return Track.Unknown
 

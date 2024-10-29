@@ -60,6 +60,7 @@ __LINE__ = inspect.currentframe()
 from NormiW import NormiAdr as forCMP
 from distribforzip import zuzazip
 
+#import pdb - как включить -i для автовхода в python repl при вылете по exception
 print(__LINE__.f_lineno)
 inN, de_ug = os.cpu_count() + 1, 0  # +1 #
 VRS = rezname.rezname()
@@ -708,7 +709,8 @@ def buildDSmakingCake(WW, MM, ofld):
 
     debundle.getS(unk)
     rez, unk = makeXLS(unk, VRSbs), join(unk, "")
-    # os.system(f'del "{unk}*{typefilesOfdata}"') #дебужно посмотреть бандл файлы
+    #"надобы" прикрутить argparse-подобное вариант модно-молодёжный для флага режимов оставления различных файлов и устройсва дерева служдебных файлов
+    os.system(f'del "{unk}*{typefilesOfdata}"') #дебужно посмотреть бандл файлы
     print(timing.log("4_E", "Отсохронялись"))
     return rez, unk
 

@@ -84,6 +84,12 @@ def Hn(path, Tp="M"):  # hash name from path ;#Tp  in ['M','W','R']
     if Tp == "R":  # cose avg(M,W)  or as same chr(((ord('M')+ord('W'))//2)
         rez = basename(path).split("$")[0].strip()
     if rez:
+        #chcp 866 chcp 1251 chcp 65001 finita - all names pdf is translite eng:
+        symbols = (u"№ГУабвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВДЕЁЖЗИЙКЛМНОПРСТФХЦЧШЩЪЫЬЭЮЯ",
+                   u"#GUabvgdeejzijklmnoprstufhzcss_y_euaABVDEEJZIJKLMNOPRSTFHZCSS_Y_EUA")
+        tr = {ord(a):ord(b) for a, b in zip(*symbols)}
+        rez=rez.translate(tr)
+        
         while rez in rname:
             rez += "_1"
         rname[rez] = path  # полный абсолютный путь файла для сборки страниц в итоге
@@ -104,6 +110,13 @@ def prsM(page, file, pN):
     UrFcs = "МЭК"  # Q? константа тут али чё как?
     if file not in rname:
         file = Hn(file, "M")
+    #24Oct28__ Оплата СБП\n :)!!!! lol kek 
+    bdH=["Оплата СБП\n"]  ## набор.....
+    for bd in bdH:
+        if page.startswith(bd):
+            page=page[len(bd):]
+    #24Oct28__ Оплата СБП\n :)!!!! lol kek 
+    
     adr = page.split("\n", 1)[0].strip()  # сырой адрес МЭК
     adrNorm = SmplAdr(adr, "M").smpl()
     isBad = useExceptlst and isBadMek(adr)

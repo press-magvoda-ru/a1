@@ -7,7 +7,9 @@ from collections import defaultdict
 from enum import Enum
 
 # interface:
-Track = Enum("Track", nms := ["Unknown", "Непечатное", "Левицкой", "IT"])
+#Track = Enum("Track", nms := ["Unknown", "Непечатное", "Левицкой", "IT"])
+Track = Enum("Track", nms := ["Unknown", "NonPrintable", "Levickoy", "IT"]) #ascii7
+
 for i in range(len(Track)):
     locals()[nms[i]] = Track(i + 1)
     __all__.append(nms[i])
