@@ -163,11 +163,16 @@ def prsW(page, src, pageNum):
         page = page.partition("\n")[2]
     page = page.replace("\xa0", " ")
 
-    UrFcs = "&".join(
-        sorted(
-            s.split('"')[1].upper() for s in page.split("\n") if s.startswith("ВСЕГО")
+    try:
+        a=[s.upper() for s in page.split("\n") if s.startswith("ВСЕГО")]
+        a=[('КУИИЗО' if 'КУИИЗО' in s else s.split('"')[1])for s in a]
+        UrFcs = "&".join(
+            sorted(
+                a
+            )
         )
-    )
+    except Exception as e:
+        print(e) 
 
     els = (
         ""
