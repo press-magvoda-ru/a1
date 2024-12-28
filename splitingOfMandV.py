@@ -25,10 +25,11 @@
 * совмещает на один лист(две страницы)  страницы из 1G(~280 pdf файлов)(~200к квитанций) и ~8G(~140файлов)(~200к квитанций)
 * переупорядочивает листы в адресном порядке
 *
-* общее время исполнения менее 20 минут (на 4яд/8поточном) путём распараллеливания этапа склейки  посредством multiprocessing
+* общее время исполнения менее 20 минут (на 4яд/8поточном) путём распараллеливания этапа склейки  посредством `multiprocessing
 """
 
 import multiprocessing as mp
+#import mp
 import os
 import pprint
 import sys
@@ -39,6 +40,7 @@ from os.path import basename, dirname, join, exists, splitext
 import fitz
 import rezname
 import timing
+import debundle  # move  from 708 cose in multiproc (with viztrace) not find this module#Q?:probaply cose mp.freeze ??? :?Q
 from reparseWxMx import (
     Hn,
     Pg,
@@ -60,7 +62,7 @@ __LINE__ = inspect.currentframe()
 from NormiW import NormiAdr as forCMP
 from distribforzip import zuzazip
 
-#import pdb - как включить -i для автовхода в python repl при вылете по exception
+# import pdb - как включить -i для автовхода в python repl при вылете по exception
 print(__LINE__.f_lineno)
 inN, de_ug = os.cpu_count() + 1, 0  # +1 #
 VRS = rezname.rezname()
@@ -374,7 +376,7 @@ def main(root, rout=None):
             f'{root}{"_w_t_dec"}',
         )
     )
-    mainUI(join(root, "_mek"), join(root, "_w_t"), join(rout, f"MW{VRS}"))
+    mainUI(join(root, "_mek"), join(root, "_w_t"), join(os.environ["TMP"], f"MW{VRS}"))
 
 
 WbyM, MbyW = {}, {}
@@ -684,7 +686,7 @@ def buildDSmakingCake(WW, MM, ofld):
     HarvestByAdr(WW, MM)
     print(timing.log("3", "Построение листов"))
     # for Hn, fullpath in rname.items():  WMdocByHn[Hn] = fitz.open(fullpath)
-    os.mkdir(unk := join(ofld, "WMpdfs"))
+    os.mkdir(unk := join(ofld, "WMpdfs"+rezname.rezname()))
     os.system(f'start "Квитанции с водой" "{unk}"')
     procs, chunks = [], [Nparts([0], [], i + 1) for i in range(inN)]
     for e in sorted(
@@ -705,17 +707,15 @@ def buildDSmakingCake(WW, MM, ofld):
     pprint.pprint(WbyM, width=99999999, stream=open(join(ofld, "WbyM"), "w"))
     print(timing.log("4_2", ":WbyM"))
 
-    import debundle
-
     debundle.getS(unk)
     rez, unk = makeXLS(unk, VRSbs), join(unk, "")
-    #"надобы" прикрутить argparse-подобное вариант модно-молодёжный для флага режимов оставления различных файлов и устройсва дерева служдебных файлов
-    os.system(f'del "{unk}*{typefilesOfdata}"') #дебужно посмотреть бандл файлы
+    # "надобы" прикрутить argparse-подобное вариант модно-молодёжный для флага режимов оставления различных файлов и устройсва дерева служдебных файлов
+    os.system(f'del "{unk}*{typefilesOfdata}"')  # дебужно посмотреть бандл файлы
     print(timing.log("4_E", "Отсохронялись"))
     return rez, unk
 
 
-if __name__ == "__main__":
+def main0():
     mp.freeze_support()
     root = rezname.getArgOr(1, dirname(dirname(__file__)), "Dir")
     # SAGAread = rezname.getArgOr(2, ["doParseMEK", "doParseWT", "doParing"])
@@ -723,3 +723,20 @@ if __name__ == "__main__":
     print(":\t Начало", timing.log("", f"{timing.pred-timing.base}"))
     main(join(root, ""))
     timing.ender()
+
+
+if __name__ == "__main__":
+    # main_for_cProfile()
+    use_viztracer = 1  # viztracer --log_multiprocess your_script.py ## Q?: how 1> and 2> for .py work throw it(viztrace):?Q
+    if use_viztracer:  # https://stackoverflow.com/questions/11041683/python-multiprocess-profiling/64811369#64811369
+        main0()
+    else:  # multiproc  is non easy for use cProfile :()
+        import cProfile
+
+        cProOut = join(
+            os.environ["USERPROFILE"],
+            "Desktop",
+            "Hints",
+            "restats_" + rezname.rezname(),
+        )
+        cProfile.run("main0()", cProOut)

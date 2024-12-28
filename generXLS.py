@@ -11,6 +11,9 @@ from reparseWxMx import bundle  # noqa: F401 -eval(stat) use it :)
 import rezname
 import string
 from collections import Counter
+import re
+from zipuem import Track
+from zipuem import tracks  # * is error!? ##some lulz with path triger under viztrace : ModuleNotFoundError: No module named 'zipuem'
 
 fscv = "zipuem.csv"
 
@@ -25,8 +28,6 @@ prf = "000-"
 
 
 def TrackByName(name):
-    import re
-    from zipuem import Track
 
     if re.search(r"\(.*\)", name):
         return Track.NonPrintable
@@ -91,7 +92,6 @@ def mainXLSsheetAndFresh(
     1
     pgFrshR = 1
     Kontrs = Counter()
-    from zipuem import tracks  # * is error!?
 
     for fullPathFile in mnL:
         if fullPathFile.find("$bundle") < 0:

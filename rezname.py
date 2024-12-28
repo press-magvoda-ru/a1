@@ -50,8 +50,6 @@ def fromTo(src, p, dst):
 
 
 def mkPdffromDictOfPg(DictOfPg, Hn2FulPath, outFullpath=None):
-    import fitz
-
     outFullpath = outFullpath or f"{rezname()}.pdf"
     doc = fitz.open()
     for v in DictOfPg.values():

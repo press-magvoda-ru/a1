@@ -4,6 +4,7 @@ from generXLS import typefilesOfdata
 import os
 from os.path import join
 import sys
+import pandas as pd
 
 
 # ----------
@@ -49,7 +50,6 @@ def getAllbundles(b):
 
 def getS(path):
     (allbundle := getAllbundles(lst(path)))
-    import pandas as pd
 
     df = pd.DataFrame(allbundle)
     print(f"all is {(z:=bundle(*df.sum(1)))}")
