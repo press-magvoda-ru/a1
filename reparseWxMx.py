@@ -107,22 +107,35 @@ def add2Hn(paths, Tp="M"):
 
 def prsM(page, file, pN):
     """ парсинг значимых для совмещения данных из pdf-страницы квитанции M """
+    #24Oct28__ Оплата СБП\n :)!!!! lol kek 
+    bdH=["Оплата СБП\n"]  ## набор.....
+    #25Feb28 мэк охвостился: (валидно по "Единый платежный документ" в теле но )
+    # теперь "Оплата СБП\n" везде(?)
+    global _cache_ofprsM,lX
+    if not (page.startswith(bdH[0])):
+        # U хвоста:
+        lX += 1
+        if 0*(lX > 1):
+            breakpoint()
+        return (
+            _cache_ofprsM := makeFakeNxtPg(_cache_ofprsM)
+        )  # вероятней всего это выехавшее за 1 страницу примечание
     UrFcs = "МЭК"  # Q? константа тут али чё как?
     if file not in rname:
         file = Hn(file, "M")
-    #24Oct28__ Оплата СБП\n :)!!!! lol kek 
-    bdH=["Оплата СБП\n"]  ## набор.....
     for bd in bdH:
         if page.startswith(bd):
             page=page[len(bd):]
     #24Oct28__ Оплата СБП\n :)!!!! lol kek 
-    
+
+    lX = 0
+        
     adr = page.split("\n", 1)[0].strip()  # сырой адрес МЭК
     adrNorm = SmplAdr(adr, "M").smpl()
     isBad = useExceptlst and isBadMek(adr)
     isPriv=int(not(('101'<=(h:=file[2:5])<='299') or h in ['021','028'])) #like M-028-
     if not (tail := page.split("Лицевой счет:", 1)[1]):
-        return Pg(pN, file, "", "", "", "", adr, adrNorm, UrFcs, defMekDeliv, isBad, isPriv)
+        return (_cache_ofprsM:=Pg(pN, file, "", "", "", "", adr, adrNorm, UrFcs, defMekDeliv, isBad, isPriv))
     # print(l)
     pa = tail.split("\n", 1)[0].strip()  # ''.join([e for e in l.split('\n',1)[0]
     Deliv = tail.split("\n", 2)[1].strip()
@@ -137,10 +150,10 @@ def prsM(page, file, pN):
     ].replace(".", "")  # ?method  remove all from {. }
     if (rez := timing.fltru(uuu)) != uuu:
         uuu = f"{rez}|{uuu}"
-    return Pg(pN, file, uuu, els, pa, sqS, adr, adrNorm, UrFcs, defMekDeliv, isBad, isPriv)
+    return (_cache_ofprsM:=Pg(pN, file, uuu, els, pa, sqS, adr, adrNorm, UrFcs, defMekDeliv, isBad, isPriv))
 
 
-_cache_ofprsW, b_c = {}, {ord(c): None for c in " \xa0"}
+_cache_ofprsW,_cache_ofprsM, b_c = {},{}, {ord(c): None for c in " \xa0"}
 lX = 0
 
 
