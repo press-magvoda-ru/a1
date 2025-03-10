@@ -184,6 +184,7 @@ def LinesOfFileName(pathofFile):
 
 @lru_cache(maxsize=999)
 def weightMek(a):
+    nm=rl=None
     try:
         if (rl := pagesInPDF(a)) == (nm := int(basename(a).split("-")[4])):
             return nm
