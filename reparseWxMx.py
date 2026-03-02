@@ -177,7 +177,8 @@ def prsW(page, src, pageNum):
     page = page.replace("\xa0", " ")
 
     try:
-        a=[s.upper() for s in page.split("\n") if s.startswith("ВСЕГО")]
+        #a=[s.upper() for s in page.split("\n") if s.startswith("ВСЕГО")]
+        a=[s.split(',',1)[0].upper()for s in page.split("\n")if ~s.find('ИНН:')]
         a=[('КУИИЗО' if 'КУИИЗО' in s else s.split('"')[1])for s in a]
         UrFcs = "&".join(
             sorted(
